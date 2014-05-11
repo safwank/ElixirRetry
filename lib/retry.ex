@@ -10,8 +10,12 @@ defmodule Retry do
             if attempt <= unquote(retries) do
               IO.puts "attempt #{attempt}"
 
-              case unquote(block) do
-                {:error, _} -> self.(attempt + 1, self)
+              try do
+                case unquote(block) do
+                  {:error, _} -> self.(attempt + 1, self)
+                end
+              rescue
+                e in RuntimeError -> self.(attempt + 1, self)
               end
             end
           end

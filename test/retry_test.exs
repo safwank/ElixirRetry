@@ -7,4 +7,10 @@ defmodule RetryTest do
       {:error, "Error"}
     end
   end
+
+  test "should retry execution for specified attempts when result is an error" do
+    retry 5 do
+      raise "Error"
+    end
+  end
 end
