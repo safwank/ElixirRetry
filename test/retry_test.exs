@@ -3,34 +3,50 @@ defmodule RetryTest do
   use Retry
 
   test "retry should retry execution for specified attempts when result is error tuple" do
-    result = retry 5 in 500 do
-      {:error, "Error"}
+    {elapsed, _} = :timer.tc fn ->
+      result = retry 5 in 500 do
+        {:error, "Error"}
+      end
+
+      assert result == {:error, "Error"}
     end
 
-    assert result = {:error, "Error"}
+    assert elapsed/1000 > 2500
   end
 
   test "retry should retry execution for specified attempts when error is raised" do
-    assert_raise RuntimeError, fn ->
-      retry 5 in 500 do
-        raise "Error"
+    {elapsed, _} = :timer.tc fn ->
+      assert_raise RuntimeError, fn ->
+        retry 5 in 500 do
+          raise "Error"
+        end
       end
     end
+
+    assert elapsed/1000 > 2500
   end
 
   test "backoff should retry execution for specified period when result is error tuple" do
-    result = backoff 1000 do
-      {:error, "Error"}
+    {elapsed, _} = :timer.tc fn ->
+      result = backoff 1000 do
+        {:error, "Error"}
+      end
+
+      assert result == {:error, "Error"}
     end
 
-    assert result = {:error, "Error"}
+    assert elapsed/1000 <= 1000
   end
 
   test "backoff should retry execution for specified period when error is raised" do
-    assert_raise RuntimeError, fn ->
-      backoff 1000 do
-        raise "Error"
+    {elapsed, _} = :timer.tc fn ->
+      assert_raise RuntimeError, fn ->
+        backoff 1000 do
+          raise "Error"
+        end
       end
     end
+
+    assert elapsed/1000 <= 1000
   end
 end
