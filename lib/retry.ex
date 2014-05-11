@@ -4,19 +4,26 @@ defmodule Retry do
     quote do
       import Retry
 
-      defmacro retry(retries, do: block) do
+      defmacro retry({ :in, _, [retries, sleep] }, do: block) do
         quote do
           run = fn(attempt, self) ->
             if attempt <= unquote(retries) do
-              IO.puts "attempt #{attempt}"
+              IO.puts "Attempt #{attempt}"
 
               try do
                 case unquote(block) do
-                  {:error, _} -> self.(attempt + 1, self)
+                  {:error, _} -> 
+                    :timer.sleep(unquote(sleep))
+                    self.(attempt + 1, self)
                 end
               rescue
-                e in RuntimeError -> self.(attempt + 1, self)
+                e in RuntimeError -> 
+                  :timer.sleep(unquote(sleep))
+                  self.(attempt + 1, self)
               end
+            else
+              IO.puts "Giving up"
+              unquote(block)
             end
           end
 
