@@ -15,6 +15,7 @@ defmodule Retry do
                   {:error, _} -> 
                     :timer.sleep(unquote(sleep))
                     self.(attempt + 1, self)
+                  result -> result
                 end
               rescue
                 e in RuntimeError -> 
@@ -46,6 +47,7 @@ defmodule Retry do
                   {:error, _} -> 
                     :timer.sleep(sleep)
                     self.(attempt + 1, self)
+                  result -> result
                 end
               rescue
                 e in RuntimeError -> 
