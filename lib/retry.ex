@@ -8,8 +8,6 @@ defmodule Retry do
         quote do
           run = fn(attempt, self) ->
             if attempt <= unquote(retries) do
-              IO.puts "Attempt #{attempt}"
-
               try do
                 case unquote(block) do
                   {:error, _} -> 
@@ -23,7 +21,6 @@ defmodule Retry do
                   self.(attempt + 1, self)
               end
             else
-              IO.puts "Giving up"
               unquote(block)
             end
           end
@@ -37,11 +34,8 @@ defmodule Retry do
           run = fn(attempt, self) ->
             # http://dthain.blogspot.com.au/2009/02/exponential-backoff-in-distributed.html
             sleep = :erlang.round((1 + :random.uniform) * 10 * :math.pow(2, attempt))
-            IO.puts "Next sleep: #{sleep}"
 
             if sleep <= unquote(timeout) do
-              IO.puts "Attempt #{attempt}"
-
               try do
                 case unquote(block) do
                   {:error, _} -> 
@@ -55,7 +49,6 @@ defmodule Retry do
                   self.(attempt + 1, self)
               end
             else
-              IO.puts "Giving up"
               unquote(block)
             end
           end
