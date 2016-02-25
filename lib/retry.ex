@@ -10,13 +10,13 @@ defmodule Retry do
             if attempt <= unquote(retries) do
               try do
                 case unquote(block) do
-                  {:error, _} -> 
+                  {:error, _} ->
                     :timer.sleep(unquote(sleep))
                     self.(attempt + 1, self)
                   result -> result
                 end
               rescue
-                e in RuntimeError -> 
+                e in RuntimeError ->
                   :timer.sleep(unquote(sleep))
                   self.(attempt + 1, self)
               end
@@ -38,13 +38,13 @@ defmodule Retry do
             if sleep <= unquote(timeout) do
               try do
                 case unquote(block) do
-                  {:error, _} -> 
+                  {:error, _} ->
                     :timer.sleep(sleep)
                     self.(attempt + 1, self)
                   result -> result
                 end
               rescue
-                e in RuntimeError -> 
+                e in RuntimeError ->
                   :timer.sleep(sleep)
                   self.(attempt + 1, self)
               end
