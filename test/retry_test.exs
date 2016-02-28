@@ -1,6 +1,7 @@
 defmodule RetryTest do
   use ExUnit.Case
   use Retry
+  doctest Retry
 
   test "retry should retry execution for specified attempts when result is error tuple" do
     {elapsed, _} = :timer.tc fn ->
