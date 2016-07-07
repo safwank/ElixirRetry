@@ -40,7 +40,7 @@ defmodule Retry do
   Example
 
   ```elixir
-  backoff 1000 do
+  backoff 1000, delay_cap: 100 do
     # interact the external service
   end
   ```
@@ -49,11 +49,23 @@ defmodule Retry do
   exponentially increasing delay between attempts. Execution is deemed a failure
   if the block returns `{:error, _}` or raises a runtime error.
 
+  The `delay_cap` is optional. If specified it will be the max length of any
+  delay. In the example this is saying never delay more than 100ms between
+  attempts. Omitting `delay_cap` is the same as setting it to `:infinity`.
+
   """
   defmacro backoff(time_budget, do: block) do
     quote do
       do_retry(
-        exp_backoff_delays(unquote(time_budget)),
+        exp_backoff_delays(unquote(time_budget), :infinity),
+        unquote(block_runner(block))
+      )
+    end
+  end
+  defmacro backoff(time_budget, delay_cap: delay_cap, do: block) do
+    quote do
+      do_retry(
+        exp_backoff_delays(unquote(time_budget), unquote(delay_cap)),
         unquote(block_runner(block))
       )
     end
@@ -101,9 +113,9 @@ defmodule Retry do
   the specified budget of milliseconds has elapsed.
 
   """
-  def exp_backoff_delays(budget) do
+  def exp_backoff_delays(budget, delay_cap) do
     Stream.unfold({1, :os.system_time(:milli_seconds) + budget}, fn {failures, end_t} ->
-      next_delay = :erlang.round((1 + :random.uniform) * 10 * :math.pow(2, failures))
+      next_delay = figure_exp_delay(failures, delay_cap)
       now_t = :os.system_time(:milli_seconds)
 
       cond do
@@ -123,5 +135,15 @@ defmodule Retry do
   def lin_backoff_delays(count, delay) do
     Stream.cycle([delay])
     |> Stream.take(count)
+  end
+
+  defp figure_exp_delay(failures, :infinity) do
+    :erlang.round((1 + :random.uniform) * 10 * :math.pow(2, failures))
+  end
+  defp figure_exp_delay(failures, delay_cap) do
+    Enum.min([
+      figure_exp_delay(failures, :infinity),
+      delay_cap
+    ])
   end
 end

@@ -1,5 +1,5 @@
 defmodule RetryTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   use Retry
   doctest Retry
 
@@ -65,5 +65,21 @@ defmodule RetryTest do
     end
 
     assert result == {:ok, "Everything's so awesome!"}
+  end
+
+  test "exp_backoff_delays honors numeric delay cap" do
+    assert exp_backoff_delays(1000, 30)
+    |> Enum.take(10)
+    |> Enum.all?(&(&1 <= 30))
+  end
+
+  test "exp_backoff_delays honors delay cap of :infinity" do
+    exp_backoff_delays(1000, :infinite)
+    |> Enum.take(5)
+    |> Enum.scan(fn (delay, last_delay) ->
+      assert delay > last_delay
+      delay
+    end )
+
   end
 end
