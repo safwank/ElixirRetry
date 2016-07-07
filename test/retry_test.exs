@@ -44,7 +44,7 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert elapsed/1000 <= 1000
+    assert_in_delta elapsed/1000, 1000, 10
   end
 
   test "backoff should retry execution for specified period when error is raised" do
@@ -56,7 +56,7 @@ defmodule RetryTest do
       end
     end
 
-    assert elapsed/1000 <= 1000
+    assert_in_delta elapsed/1000, 1000, 10
   end
 
   test "backoff should not have to retry execution when there is no error" do
