@@ -27,7 +27,7 @@ defmodule Retry do
   defmacro retry({ :in, _, [retries, sleep] }, do: block) do
     quote do
       do_retry(
-        lin_backoff_delays(unquote(retries), unquote(sleep)),
+        fixed_delays(unquote(retries), unquote(sleep)),
         unquote(block_runner(block))
       )
     end
@@ -49,7 +49,7 @@ defmodule Retry do
   exponentially increasing delay between attempts. Execution is deemed a failure
   if the block returns `{:error, _}` or raises a runtime error.
 
-  The `delay_cap` is optional. If specified it will be the max length of any
+  The `delay_cap` is optional. If specified it will be the max duration of any
   delay. In the example this is saying never delay more than 100ms between
   attempts. Omitting `delay_cap` is the same as setting it to `:infinity`.
 
@@ -132,7 +132,7 @@ defmodule Retry do
   @doc """
   Returns stream that returns specified number of the specified delay.
   """
-  def lin_backoff_delays(count, delay) do
+  def fixed_delays(count, delay) do
     Stream.cycle([delay])
     |> Stream.take(count)
   end
