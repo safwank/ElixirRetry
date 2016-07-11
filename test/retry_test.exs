@@ -44,7 +44,7 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert elapsed/1000 <= 1000
+    assert_in_delta elapsed/1000, 1000, 10
   end
 
   test "backoff should retry execution for specified period when error is raised" do
@@ -56,7 +56,7 @@ defmodule RetryTest do
       end
     end
 
-    assert elapsed/1000 <= 1000
+    assert_in_delta elapsed/1000, 1000, 10
   end
 
   test "backoff should not have to retry execution when there is no error" do
@@ -65,5 +65,21 @@ defmodule RetryTest do
     end
 
     assert result == {:ok, "Everything's so awesome!"}
+  end
+
+  test "exp_backoff_delays honors numeric delay cap" do
+    assert exp_backoff_delays(1000, 30)
+    |> Enum.take(10)
+    |> Enum.all?(&(&1 <= 30))
+  end
+
+  test "exp_backoff_delays honors delay cap of :infinity" do
+    exp_backoff_delays(1000, :infinite)
+    |> Enum.take(5)
+    |> Enum.scan(fn (delay, last_delay) ->
+      assert delay > last_delay
+      delay
+    end )
+
   end
 end

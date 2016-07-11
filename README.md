@@ -16,7 +16,8 @@ result = backoff 1000 do
   SomeModule.flaky_function # Either raises a transient runtime error or returns an error tuple
 end
 ```
-The argument is the timeout (in milliseconds) before giving up.
+The argument is the timeout (in milliseconds) before giving up. `backoff` accepts a optional argument `delay_cap` which is the maximum delay (in milliseconds) between attempts.
+
 
 ## Circuit breaker
 Work in progress.
