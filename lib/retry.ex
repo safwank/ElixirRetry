@@ -1,4 +1,8 @@
 defmodule Retry do
+  @moduledoc """
+  Retry functions.
+  """
+
   @doc false
   defmacro __using__(_opts) do
     quote do
@@ -24,7 +28,7 @@ defmodule Retry do
   raises a runtime error.
 
   """
-  defmacro retry({ :in, _, [retries, sleep] }, do: block) do
+  defmacro retry({:in, _, [retries, sleep]}, do: block) do
     quote do
       do_retry(
         fixed_delays(unquote(retries), unquote(sleep)),
@@ -78,16 +82,16 @@ defmodule Retry do
 
   """
   def do_retry(retry_delays, fun) do
-    delays = Stream.concat([0], retry_delays)
+    delays = [0] |> Stream.concat(retry_delays)
 
-    final_result = Enum.reduce_while(delays, nil, fn(delay, _last_result) ->
+    final_result = delays |> Enum.reduce_while(nil, fn(delay, _last_result) ->
       :timer.sleep(delay)
       fun.()
-    end )
+    end)
 
     case final_result do
       {:exception, e} -> raise e
-      result   -> result
+      result          -> result
     end
   end
 
@@ -121,19 +125,20 @@ defmodule Retry do
       cond do
         now_t > end_t ->
           nil   # out of time
-          (now_t + next_delay) > end_t ->
-          {end_t - now_t, {failures+1, end_t}}   # one last try
+        (now_t + next_delay) > end_t ->
+          {end_t - now_t, {failures + 1, end_t}}   # one last try
         true ->
-          {next_delay,    {failures+1, end_t}}
+          {next_delay, {failures + 1, end_t}}
       end
-    end )
+    end)
   end
 
   @doc """
   Returns stream that returns specified number of the specified delay.
   """
   def fixed_delays(count, delay) do
-    Stream.cycle([delay])
+    [delay]
+    |> Stream.cycle
     |> Stream.take(count)
   end
 

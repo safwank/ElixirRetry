@@ -79,7 +79,6 @@ defmodule RetryTest do
     |> Enum.scan(fn (delay, last_delay) ->
       assert delay > last_delay
       delay
-    end )
-
+    end)
   end
 end
