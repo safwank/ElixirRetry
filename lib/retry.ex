@@ -6,20 +6,20 @@ defmodule Retry do
 
   Examples
 
-  use Retry
-  import Stream
+      use Retry
+      import Stream
 
-  retry with: exp_backoff |> randomize |> cap(1000) |> expiry(10000) do
-  # interact with external service
-  end
+      retry with: exp_backoff |> randomize |> cap(1000) |> expiry(10000) do
+      # interact with external service
+      end
 
-  retry with: lin_backoff(10, @fibonacci) |> cap(1000) |> take(10) do
-  # interact with external service
-  end
+      retry with: lin_backoff(10, @fibonacci) |> cap(1000) |> take(10) do
+      # interact with external service
+      end
 
-  retry with: cycle([500]) |> take(10) do
-  # interact with external service
-  end
+      retry with: cycle([500]) |> take(10) do
+      # interact with external service
+      end
 
   The first retry will exponentially increase the delay, fudging each delay up
   to 10%, until the delay reaches 1 second and then give up after 10 seconds.
@@ -49,20 +49,20 @@ defmodule Retry do
 
   Example
 
-  use Retry
-  import Stream
+      use Retry
+      import Stream
 
-  retry with: exp_backoff |> cap(1000) |> expiry(1000) do
-  # interact with external service
-  end
+      retry with: exp_backoff |> cap(1000) |> expiry(1000) do
+      # interact with external service
+      end
 
-  retry with: linear_backoff(@fibonacci) |> cap(1000) |> take(10) do
-  # interact with external service
-  end
+      retry with: linear_backoff(@fibonacci) |> cap(1000) |> take(10) do
+      # interact with external service
+      end
 
-  retry with: cycle([500]) |> take(10) do
-  # interact with external service
-  end
+      retry with: cycle([500]) |> take(10) do
+      # interact with external service
+      end
 
   """
   defmacro retry([with: stream_builder], do: block) do
@@ -91,11 +91,9 @@ defmodule Retry do
 
   Example
 
-  ```elixir
-  retry 5 in 500 do
-  # interact with external service
-  end
-  ```
+      retry 5 in 500 do
+      # interact with external service
+      end
 
   Runs the block up to 5 times with a half second sleep between each
   attempt. Execution is deemed a failure if the block returns `{:error, _}` or
@@ -115,11 +113,9 @@ defmodule Retry do
 
   Example
 
-  ```elixir
-  backoff 1000, delay_cap: 100 do
-  # interact the external service
-  end
-  ```
+      backoff 1000, delay_cap: 100 do
+      # interact the external service
+      end
 
   Runs the block repeated until it succeeds or 1 second elapses with an
   exponentially increasing delay between attempts. Execution is deemed a failure

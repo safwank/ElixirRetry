@@ -85,20 +85,18 @@ defmodule Retry.DelayStreams do
 
   """
   def cap(delays, max) do
-    Stream.map(delays, fn d ->
-      if d <= max do
-        d
-      else
-        max
+    Stream.map(delays,
+      fn d when d <= max -> d
+        _  -> max
       end
-    end)
+    )
   end
 
   @doc """
 
-  Returns a delay stream thatthat is the same as `delays` except it limits the
-  total life span of the stream to `time_budget`. This calculation take the
-  execution time of the block being retried into account.
+  Returns a delay stream that is the same as `delays` except it limits the total
+  life span of the stream to `time_budget`. This calculation takes the execution
+  time of the block being retried into account.
 
   Example
 
