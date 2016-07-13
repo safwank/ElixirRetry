@@ -74,7 +74,7 @@ defmodule Retry do
       final_result = Enum.reduce_while(delays, nil, fn(delay, _last_result) ->
         :timer.sleep(delay)
         fun.()
-      end )
+      end)
 
       case final_result do
         {:exception, e} -> raise e
@@ -105,7 +105,7 @@ defmodule Retry do
   defmacro retry({:in, _, [retries, sleep]}, do: block) do
     quote do
       import Stream
-  retry([with: cycle([unquote(sleep)]) |> take(unquote(retries))], do: unquote(block))
+  retry([with: [unquote(sleep)] |> cycle |> take(unquote(retries))], do: unquote(block))
     end
   end
 
@@ -134,14 +134,25 @@ defmodule Retry do
     quote do
       import Stream
 
-      retry([with: exp_backoff |> randomize |> expiry(unquote(time_budget))], do: unquote(block))
+      retry(
+        [with: exp_backoff
+               |> randomize
+               |> expiry(unquote(time_budget))],
+        do: unquote(block)
+      )
     end
   end
   defmacro backoff(time_budget, delay_cap: delay_cap, do: block) do
     quote do
       import Stream
 
-      retry([with: exp_backoff |> randomize |> cap(unquote(delay_cap)) |> expiry(unquote(time_budget))], do: unquote(block))
+      retry(
+        [with: exp_backoff
+               |> randomize
+               |> cap(unquote(delay_cap))
+               |> expiry(unquote(time_budget))],
+        do: unquote(block)
+      )
     end
   end
 

@@ -20,8 +20,8 @@ defmodule Retry.DelayStreams do
   """
   def exp_backoff do
     Stream.unfold(1, fn failures ->
-      {:erlang.round(10 * :math.pow(2, failures)), failures+1}
-    end )
+      {:erlang.round(10 * :math.pow(2, failures)), failures + 1}
+    end)
   end
 
   @doc """
@@ -40,7 +40,7 @@ defmodule Retry.DelayStreams do
       next_d = last_delay * factor
 
       {next_d, next_d}
-    end )
+    end)
   end
 
   @doc """
@@ -62,11 +62,11 @@ defmodule Retry.DelayStreams do
   """
   def randomize(delays, proportion \\ 0.1) do
     Stream.map(delays, fn d ->
-      max_delta = d * proportion |> round
-      shift = :rand.uniform( 2 * max_delta) - max_delta
+      max_delta = round(d * proportion)
+      shift = :rand.uniform(2 * max_delta) - max_delta
 
       d + shift
-    end )
+    end)
   end
 
   @doc """
@@ -91,7 +91,7 @@ defmodule Retry.DelayStreams do
       else
         max
       end
-    end )
+    end)
   end
 
   @doc """
@@ -126,6 +126,6 @@ defmodule Retry.DelayStreams do
           -> {[preferred_delay], status}
       end
 
-    end )
+    end)
   end
 end
