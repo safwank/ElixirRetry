@@ -2,7 +2,23 @@
 
 # ElixirRetry
 
-## Linear retry
+## Installation
+
+Add `retry` to your list of dependencies in `mix.exs`:
+
+```elixir
+  def deps do
+    [{:retry, "~> 0.2.0"}]
+  end
+```
+
+## Documentation
+
+Check out the [API reference](https://hexdocs.pm/retry/Retry.html) for the latest documentation.
+
+## Features
+
+#### Linear retry
 
 ```
 result = retry 5 in 500 do
@@ -11,7 +27,7 @@ end
 ```
 The first argument (5) is the number of retries and the second (500) is the period between attempts in milliseconds.
 
-## Exponential backoff
+#### Exponential backoff
 
 ```
 result = backoff 1000 do
@@ -20,6 +36,5 @@ end
 ```
 The argument is the timeout (in milliseconds) before giving up. `backoff` accepts a optional argument `delay_cap` which is the maximum delay (in milliseconds) between attempts.
 
-
-## Circuit breaker
+#### Circuit breaker
 Work in progress.
