@@ -2,6 +2,8 @@
 
 # ElixirRetry
 
+Simple Elixir macros for linear retries and exponential backoffs.
+
 ## Installation
 
 Add `retry` to your list of dependencies in `mix.exs`:
