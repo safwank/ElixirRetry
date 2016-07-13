@@ -27,16 +27,16 @@ The `retry(with: _, do: _)` macro provides a way to retry a block of code on fai
 #### Example -- exponential backoff
 
 ```elixir
-result = retry exp_backoff |> randomize |> expiry(10000) do
+result = retry with: exp_backoff |> randomize |> expiry(10000) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
-This will try the block, and return the result, as soon as it succeeds. On a failure this example will wait an exponentially increasing amount of time (`exp_backoff/0`). Each delay will be randomly adjusted by a duration within +/-10% (`randomize/2`). And finally it will give up entirely if the block has not succeeded with in 10 seconds (`expiry/2`).
+This will try the block, and return the result, as soon as it succeeds. On a failure this example will wait an exponentially increasing amount of time (`exp_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). And finally it will give up entirely if the block has not succeeded with in 10 seconds (`expiry/2`).
 
 #### Example -- linear backoff
 
 ```elixir
-result = retry lin_backoff(10, 1.5) |> cap(1000) |> Stream.take(10) do
+result = retry with: lin_backoff(10, 1.5) |> cap(1000) |> Stream.take(10) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
@@ -50,7 +50,7 @@ The `with:` option of `retry` accepts any `Stream` that yields integers. These i
 ##### Example
 
 ```elixir
-result = retry Stream.cycle([500]) do
+result = retry with: Stream.cycle([500]) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
