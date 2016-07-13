@@ -36,12 +36,12 @@ This will try the block, and return the result, as soon as it succeeds. On a fai
 #### Example -- linear backoff
 
 ```elixir
-result = retry with: lin_backoff(10, 1.5) |> cap(1000) |> Stream.take(10) do
+result = retry with: lin_backoff(10, 2) |> cap(1000) |> Stream.take(10) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
 
-This example increases the delay with each retry by 1.5x, with a initial delay of 10 milliseconds, caps the delay at 1 seconds and gives up after 10 tries.
+This example doubles the delay with each retry, starting with 10 milliseconds, caps the delay at 1 second and gives up after 10 tries.
 
 #### Delay streams
 
