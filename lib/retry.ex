@@ -118,7 +118,8 @@ defmodule Retry do
 
   """
   def exp_backoff_delays(budget, delay_cap) do
-    Stream.unfold({1, :os.system_time(:milli_seconds) + budget}, fn {failures, end_t} ->
+    {1, :os.system_time(:milli_seconds) + budget}
+    |> Stream.unfold(fn {failures, end_t} ->
       next_delay = figure_exp_delay(failures, delay_cap)
       now_t = :os.system_time(:milli_seconds)
 
