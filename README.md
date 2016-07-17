@@ -16,7 +16,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ## Documentation
 
-Check out the [API reference](https://hexdocs.pm/retry/Retry.html) for the latest documentation.
+Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for the latest documentation.
 
 ## Features
 
