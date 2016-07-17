@@ -6,11 +6,8 @@ defmodule RetryTest do
   doctest Retry
 
   test "retry(with: _, do: _) retries execution for specified attempts when result is error tuple" do
-
     {elapsed, _} = :timer.tc fn ->
-      import Stream
-
-      result = retry with: lin_backoff(500, 1) |> take(5) do
+      result = retry with: lin_backoff(500, 1) |> Stream.take(5) do
         {:error, "Error"}
       end
 
@@ -41,10 +38,7 @@ defmodule RetryTest do
   end
 
   test "retry(with: _, do: _) works with any Enum" do
-
     {elapsed, _} = :timer.tc fn ->
-      import Stream
-
       result = retry with: [100, 75, 250] do
         {:error, "Error"}
       end

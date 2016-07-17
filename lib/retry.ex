@@ -27,10 +27,9 @@ defmodule Retry do
   The second retry will linearly increase the retry from 10ms following a
   Fibonacci pattern giving up after 10 attempts.
 
-  The third example show how we can product a delay stream using standard
+  The third example shows how we can produce a delay stream using standard
   `Stream` functionality. Any stream of integers may be used as the value of
   `with:`.
-
 
   """
 
@@ -69,20 +68,19 @@ defmodule Retry do
     quote do
       fun = unquote(block_runner(block))
       retry_delays = unquote(stream_builder)
-      delays = Stream.concat([0], retry_delays)
+      delays = [0] |> Stream.concat(retry_delays)
 
-      final_result = Enum.reduce_while(delays, nil, fn(delay, _last_result) ->
+      delays
+      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
         :timer.sleep(delay)
         fun.()
       end)
-
-      case final_result do
+      |> case do
         {:exception, e} -> raise e
         result          -> result
       end
     end
   end
-
 
   @doc """
 
@@ -103,7 +101,10 @@ defmodule Retry do
   defmacro retry({:in, _, [retries, sleep]}, do: block) do
     quote do
       import Stream
-  retry([with: [unquote(sleep)] |> cycle |> take(unquote(retries))], do: unquote(block))
+
+      retry([with: [unquote(sleep)]
+      |> cycle
+      |> take(unquote(retries))], do: unquote(block))
     end
   end
 
@@ -151,7 +152,6 @@ defmodule Retry do
       )
     end
   end
-
 
   defp block_runner(block) do
     quote do

@@ -8,7 +8,7 @@ defmodule Retry.DelayStreamsTest do
     |> Enum.scan(fn (delay, last_delay) ->
       assert delay > last_delay
       delay
-    end )
+    end)
   end
 
   test "lin_backoff/2" do
@@ -17,7 +17,7 @@ defmodule Retry.DelayStreamsTest do
     |> Enum.scan(fn (delay, last_delay) ->
       assert (last_delay * 1.5) == delay
       delay
-    end )
+    end)
   end
 
   test "delay streams can be capped" do
@@ -50,7 +50,7 @@ defmodule Retry.DelayStreamsTest do
     Enum.each(delays, fn (delay) ->
       assert_in_delta delay, 500, 500 * 0.1 + 1
       delay
-    end )
+    end)
 
     assert Enum.any?(delays, &(&1 != 500))
   end
@@ -63,7 +63,7 @@ defmodule Retry.DelayStreamsTest do
     Enum.each(delays, fn (delay) ->
       assert_in_delta delay, 500, 500 * 0.2 + 1
       delay
-    end )
+    end)
 
     assert Enum.any?(delays, &(abs(&1 - 500) > (500 * 0.1)))
   end

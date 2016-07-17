@@ -6,7 +6,6 @@ defmodule Retry.DelayStreams do
 
   """
 
-
   @doc """
 
   Returns a stream of delays that increase exponentially.
@@ -38,7 +37,6 @@ defmodule Retry.DelayStreams do
   def lin_backoff(initial_delay, factor) do
     Stream.unfold(initial_delay, fn last_delay ->
       next_d = last_delay * factor
-
       {next_d, next_d}
     end)
   end
@@ -54,17 +52,14 @@ defmodule Retry.DelayStreams do
         # ...
       end
 
-
   Produces an exponentially increasing delay stream where each delay is randomly
   adjusted to be within 10 percent of the original value
-
 
   """
   def randomize(delays, proportion \\ 0.1) do
     Stream.map(delays, fn d ->
       max_delta = round(d * proportion)
       shift = :rand.uniform(2 * max_delta) - max_delta
-
       d + shift
     end)
   end
@@ -116,14 +111,13 @@ defmodule Retry.DelayStreams do
       remaining_t = Enum.max([end_t - now_t, 0])
 
       cond do
-        :at_end == status             # time expired!
+        :at_end == status              # time expired!
           -> {:halt, status}
         preferred_delay > remaining_t  # one last try
-          ->  {[remaining_t], :at_end}
-       true
+          -> {[remaining_t], :at_end}
+        true
           -> {[preferred_delay], status}
       end
-
     end)
   end
 end
