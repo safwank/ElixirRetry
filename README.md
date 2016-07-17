@@ -20,23 +20,42 @@ Check out the [API reference](https://hexdocs.pm/retry/Retry.html) for the lates
 
 ## Features
 
-#### Linear retry
+### Retrying
 
-```
-result = retry 5 in 500 do
-  SomeModule.flaky_function # Either raises a transient runtime error or returns an error tuple
+The `retry(with: _, do: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
+
+#### Example -- exponential backoff
+
+```elixir
+result = retry with: exp_backoff |> randomize |> expiry(10000) do
+  ExternalApi.do_something # fails if other system is down
 end
 ```
-The first argument (5) is the number of retries and the second (500) is the period between attempts in milliseconds.
+This will try the block, and return the result, as soon as it succeeds. On a failure this example will wait an exponentially increasing amount of time (`exp_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). And finally it will give up entirely if the block has not succeeded with in 10 seconds (`expiry/2`).
 
-#### Exponential backoff
+#### Example -- linear backoff
 
-```
-result = backoff 1000 do
-  SomeModule.flaky_function # Either raises a transient runtime error or returns an error tuple
+```elixir
+result = retry with: lin_backoff(10, 2) |> cap(1000) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
 end
 ```
-The argument is the timeout (in milliseconds) before giving up. `backoff` accepts a optional argument `delay_cap` which is the maximum delay (in milliseconds) between attempts.
 
-#### Circuit breaker
-Work in progress.
+This example doubles the delay with each retry, starting with 10 milliseconds, caps the delay at 1 second and gives up after 10 tries.
+
+#### Delay streams
+
+The `with:` option of `retry` accepts any `Stream` that yields integers. These integers will be interpreted as the amount of time to delay before retrying a failed operation. When the stream is exhausted `retry` will give up, returning the last value of the block.
+
+##### Example
+
+```elixir
+result = retry with: Stream.cycle([500]) do
+  ExternalApi.do_something # fails if other system is down
+end
+```
+
+This will retry failures forever, waiting .5 seconds between attempts.
+
+
+`Retry.DelayStreams` provides a set of fully composable helper functions for building useful delay behaviors such as the ones in previous examples. See the `Retry.DelayStreams` module docs for full details and addition behavior not covered here. For convenience these functions are imported by `use Retry` so you can, usually, use them without prefixing them with the module name.
