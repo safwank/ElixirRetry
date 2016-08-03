@@ -84,7 +84,7 @@ defmodule Retry do
 
   @doc """
 
-  Retry block of code a maximum number of times with a fixed delay between
+  Retry a block of code a maximum number of times with a fixed delay between
   attempts.
 
   Example
@@ -110,7 +110,7 @@ defmodule Retry do
 
   @doc """
 
-  Retry block of code with a exponential backoff delay between attempts.
+  Retry a block of code with a exponential backoff delay between attempts.
 
   Example
 
@@ -150,6 +150,39 @@ defmodule Retry do
                |> expiry(unquote(time_budget))],
         do: unquote(block)
       )
+    end
+  end
+
+  @doc """
+
+  Wait for a block of code to be truthy delaying between each attempt
+  the duration specified by the next item in the `with` delay stream.
+
+  Example
+
+      use Retry
+      import Stream
+
+      wait with: exp_backoff |> cap(1000) |> expiry(1000) do
+        we_there_yet?
+      end
+
+  """
+  defmacro wait([with: stream_builder], do: block) do
+    quote do
+      retry_delays = unquote(stream_builder)
+      delays = [0] |> Stream.concat(retry_delays)
+
+      delays
+      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+        :timer.sleep(delay)
+
+        case unquote(block) do
+          false = result  -> {:cont, result}
+          nil = result    -> {:cont, result}
+          result          -> {:halt, result}
+        end
+      end)
     end
   end
 

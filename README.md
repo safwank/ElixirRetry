@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.3.0"}]
+    [{:retry, "~> 0.4.0"}]
   end
 ```
 
@@ -59,3 +59,15 @@ This will retry failures forever, waiting .5 seconds between attempts.
 
 
 `Retry.DelayStreams` provides a set of fully composable helper functions for building useful delay behaviors such as the ones in previous examples. See the `Retry.DelayStreams` module docs for full details and addition behavior not covered here. For convenience these functions are imported by `use Retry` so you can, usually, use them without prefixing them with the module name.
+
+### Waiting
+
+Similar to `retry(with: _, do: _)`, the `wait(with: _, do: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
+
+```elixir
+result = wait with: lin_backoff(100, 1) |> cap(1000) do
+  we_there_yet?
+end
+```
+
+This example retries every 100 milliseconds and caps the delay at 1 second.

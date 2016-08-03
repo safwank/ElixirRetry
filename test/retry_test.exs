@@ -7,7 +7,7 @@ defmodule RetryTest do
 
   test "retry(with: _, do: _) retries execution for specified attempts when result is error tuple" do
     {elapsed, _} = :timer.tc fn ->
-      result = retry with: lin_backoff(500, 1) |> Stream.take(5) do
+      result = retry with: lin_backoff(500, 1) |> take(5) do
         {:error, "Error"}
       end
 
@@ -46,9 +46,40 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert (elapsed/1000 |> round) in 425..450
+    assert round(elapsed/1000) in 425..450
   end
 
+  test "wait should retry execution for specified attempts when result is false" do
+    {elapsed, _} = :timer.tc fn ->
+      result = wait with: lin_backoff(500, 1) |> take(5) do
+        false
+      end
+
+      refute result
+    end
+
+    assert elapsed/1000 >= 2500
+  end
+
+  test "wait should retry execution for specified attempts when result is nil" do
+    {elapsed, _} = :timer.tc fn ->
+      result = wait with: lin_backoff(500, 1) |> take(5) do
+        nil
+      end
+
+      refute result
+    end
+
+    assert elapsed/1000 >= 2500
+  end
+
+  test "wait should not have to retry execution when result is truthy" do
+    result = wait with: lin_backoff(500, 1) |> take(5) do
+      {:ok, "Everything's so awesome!"}
+    end
+
+    assert result == {:ok, "Everything's so awesome!"}
+  end
 
   # backward compatibility tests
   # -----
