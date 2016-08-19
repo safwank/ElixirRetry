@@ -27,7 +27,7 @@ The `retry(with: _, do: _)` macro provides a way to retry a block of code on fai
 #### Example -- exponential backoff
 
 ```elixir
-result = retry with: exp_backoff |> randomize |> expiry(10000) do
+result = retry with: exp_backoff |> randomize |> expiry(10_000) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
@@ -36,7 +36,7 @@ This will try the block, and return the result, as soon as it succeeds. On a fai
 #### Example -- linear backoff
 
 ```elixir
-result = retry with: lin_backoff(10, 2) |> cap(1000) |> Stream.take(10) do
+result = retry with: lin_backoff(10, 2) |> cap(1_000) |> Stream.take(10) do
   ExternalApi.do_something # fails if other system is down
 end
 ```
@@ -65,7 +65,7 @@ This will retry failures forever, waiting .5 seconds between attempts.
 Similar to `retry(with: _, do: _)`, the `wait(with: _, do: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
 
 ```elixir
-result = wait with: lin_backoff(100, 1) |> cap(1000) do
+result = wait with: lin_backoff(100, 1) |> expiry(1_000) do
   we_there_yet?
 end
 ```

@@ -9,11 +9,11 @@ defmodule Retry do
       use Retry
       import Stream
 
-      retry with: exp_backoff |> randomize |> cap(1000) |> expiry(10000) do
+      retry with: exp_backoff |> randomize |> cap(1_000) |> expiry(10_000) do
       # interact with external service
       end
 
-      retry with: lin_backoff(10, @fibonacci) |> cap(1000) |> take(10) do
+      retry with: lin_backoff(10, @fibonacci) |> cap(1_000) |> take(10) do
       # interact with external service
       end
 
@@ -51,11 +51,11 @@ defmodule Retry do
       use Retry
       import Stream
 
-      retry with: exp_backoff |> cap(1000) |> expiry(1000) do
+      retry with: exp_backoff |> cap(1_000) |> expiry(1_000) do
       # interact with external service
       end
 
-      retry with: linear_backoff(@fibonacci) |> cap(1000) |> take(10) do
+      retry with: linear_backoff(@fibonacci) |> cap(1_000) |> take(10) do
       # interact with external service
       end
 
@@ -163,7 +163,7 @@ defmodule Retry do
       use Retry
       import Stream
 
-      wait with: exp_backoff |> cap(1000) |> expiry(1000) do
+      wait with: exp_backoff |> expiry(1_000) do
         we_there_yet?
       end
 
