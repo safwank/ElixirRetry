@@ -112,7 +112,7 @@ defmodule Retry do
   the duration specified by the next item in the `with` delay stream.
 
   The return value for `block` is expected to be `{:cont, result}`, return
-  {:halt, result} to end the retry early.
+  `{:halt, result}` to end the retry early.
 
   Example
 
