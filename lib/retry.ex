@@ -67,10 +67,8 @@ defmodule Retry do
   defmacro retry([with: stream_builder], do: block) do
     quote do
       fun = unquote(block_runner(block))
-      retry_delays = unquote(stream_builder)
-      delays = [0] |> Stream.concat(retry_delays)
 
-      delays
+      unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
         :timer.sleep(delay)
         fun.()
@@ -110,12 +108,38 @@ defmodule Retry do
 
   @doc """
 
+  Retry a block of code until `halt` is emitted delaying between each attempt
+  the duration specified by the next item in the `with` delay stream.
+
+  Example
+
+      retry_while with: lin_backoff(500, 1) |> take(5) do
+        call_service
+        |> case do
+          result = %{"errors" => true} -> {:cont, result}
+          result -> {:halt, result}
+        end
+      end
+
+  """
+  defmacro retry_while([with: stream_builder], do: block) do
+    quote do
+      unquote(delays_from(stream_builder))
+      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+        :timer.sleep(delay)
+        unquote(block)
+      end)
+    end
+  end
+
+  @doc """
+
   Retry a block of code with a exponential backoff delay between attempts.
 
   Example
 
       backoff 1000, delay_cap: 100 do
-      # interact the external service
+      # interact with external service
       end
 
   Runs the block repeated until it succeeds or 1 second elapses with an
@@ -170,10 +194,7 @@ defmodule Retry do
   """
   defmacro wait([with: stream_builder], do: block) do
     quote do
-      retry_delays = unquote(stream_builder)
-      delays = [0] |> Stream.concat(retry_delays)
-
-      delays
+      unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
         :timer.sleep(delay)
 
@@ -199,6 +220,13 @@ defmodule Retry do
           e in RuntimeError      -> {:cont, {:exception, e}}
         end
       end
+    end
+  end
+
+  defp delays_from(stream_builder) do
+    quote do
+      delays = unquote(stream_builder)
+      [0] |> Stream.concat(delays)
     end
   end
 end

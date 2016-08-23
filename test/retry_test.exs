@@ -49,6 +49,26 @@ defmodule RetryTest do
     assert round(elapsed/1000) in 425..450
   end
 
+  test "retry_while should retry execution for specified attempts when halt is not emitted" do
+    {elapsed, _} = :timer.tc fn ->
+      result = retry_while with: lin_backoff(500, 1) |> take(5) do
+        {:cont, "not finishing"}
+      end
+
+      assert result == "not finishing"
+    end
+
+    assert elapsed/1000 >= 2500
+  end
+
+  test "retry_while should not have to retry execution when halt is emitted" do
+    result = retry_while with: lin_backoff(500, 1) |> take(5) do
+      {:halt, "Everything's so awesome!"}
+    end
+
+    assert result == "Everything's so awesome!"
+  end
+
   test "wait should retry execution for specified attempts when result is false" do
     {elapsed, _} = :timer.tc fn ->
       result = wait with: lin_backoff(500, 1) |> expiry(2_500) do
