@@ -111,6 +111,9 @@ defmodule Retry do
   Retry a block of code until `halt` is emitted delaying between each attempt
   the duration specified by the next item in the `with` delay stream.
 
+  The return value for `block` is expected to be `{:cont, result}`, return
+  {:halt, result} to end the retry early.
+
   Example
 
       retry_while with: lin_backoff(500, 1) |> take(5) do
