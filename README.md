@@ -2,7 +2,7 @@
 
 # ElixirRetry
 
-Simple Elixir macros for linear retries and exponential backoffs.
+Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.
 
 ## Installation
 
