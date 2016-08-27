@@ -78,4 +78,4 @@ result = wait with: lin_backoff(100, 1) |> expiry(1_000) do
 end
 ```
 
-This example retries every 100 milliseconds and caps the delay at 1 second.
+This example retries every 100 milliseconds and expires after 1 second.
