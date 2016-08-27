@@ -14,6 +14,14 @@ Add `retry` to your list of dependencies in `mix.exs`:
   end
 ```
 
+Ensure `retry` is started before your application:
+
+```elixir
+  def application do
+    [applications: [:retry]]
+  end
+```
+
 ## Documentation
 
 Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for the latest documentation.
