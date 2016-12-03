@@ -1,7 +1,7 @@
 defmodule Retry do
   @moduledoc """
 
-  Provides a convenient interface to retrying behavior. All durations a
+  Provides a convenient interface to retrying behavior. All durations are
   specified in milliseconds.
 
   Examples
