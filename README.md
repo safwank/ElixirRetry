@@ -10,15 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.5.0"}]
-  end
-```
-
-Ensure `retry` is started before your application:
-
-```elixir
-  def application do
-    [applications: [:retry]]
+    [{:retry, "~> 0.6.0"}]
   end
 ```
 
