@@ -83,7 +83,7 @@ defmodule RetryTest do
 
   test "wait retries execution for specified attempts when result is false" do
     {elapsed, _} = :timer.tc fn ->
-      result = wait with: lin_backoff(500, 1) |> expiry(2_500) do
+      result = wait lin_backoff(500, 1) |> expiry(2_500) do
         false
       end
 
@@ -95,7 +95,7 @@ defmodule RetryTest do
 
   test "wait retries execution for specified attempts when result is nil" do
     {elapsed, _} = :timer.tc fn ->
-      result = wait with: lin_backoff(500, 1) |> take(5) do
+      result = wait lin_backoff(500, 1) |> take(5) do
         nil
       end
 
@@ -106,7 +106,7 @@ defmodule RetryTest do
   end
 
   test "wait does not have to retry execution when result is truthy" do
-    result = wait with: lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(5) do
       {:ok, "Everything's so awesome!"}
     end
 

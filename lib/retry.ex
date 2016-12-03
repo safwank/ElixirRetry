@@ -114,33 +114,40 @@ defmodule Retry do
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the `with` delay stream.
 
-  Example
+  ## `wait` example
 
       use Retry
       import Stream
 
-      wait with: exp_backoff |> expiry(1_000) do
+      wait exp_backoff |> expiry(1_000) do
         we_there_yet?
       end
 
-  """
-  defmacro wait([with: stream_builder], do: block) do
-    quote do
-      result =
-        unquote(delays_from(stream_builder))
-        |> Enum.reduce_while(nil, fn(delay, _last_result) ->
-          :timer.sleep(delay)
+  An optional `then` block can be given as a continuation which will
+  evaluate only when the `do` block evaluates to a truthy value.
 
-          case unquote(block) do
-            false = result  -> {:cont, result}
-            nil = result    -> {:cont, result}
-            result          -> {:halt, result}
-          end
-        end)
-    end
+  ## `wait-then` example
+
+      wait lin_backoff(500, 1) |> take(5) do
+        we_there_yet?
+      then
+        {:ok, "We have arrived!"}
+      end
+
+  """
+  defmacro wait(stream_builder, clauses) do
+    build_wait(stream_builder, clauses)
   end
 
-  defmacro wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
+  defp build_wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
+    build_wait(stream_builder, do: do_clause, then: then_clause)
+  end
+
+  defp build_wait(stream_builder, do: do_clause) do
+    build_wait(stream_builder, do: do_clause, then: do_clause)
+  end
+
+  defp build_wait(stream_builder, do: do_clause, then: then_clause) do
     quote do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
@@ -158,16 +165,6 @@ defmodule Retry do
       end
     end
   end
-
-  # def then({:error, _} = result, do: _block), do: result
-  # def then(:error, do: _block), do: :error
-  # def then(nil, do: _block), do: nil
-  # def then(false, do: _block), do: false
-  # def then(_result, do: block) do
-  #   quote do
-  #     unquote(block)
-  #   end
-  # end
 
   defp block_runner(block) do
     quote do
