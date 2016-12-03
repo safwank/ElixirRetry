@@ -178,4 +178,32 @@ defmodule RetryTest do
 
     assert result == {:error, "Not awesome"}
   end
+
+  test "wait with invalid clauses raises argument error" do
+    error_message = "invalid syntax, only \"wait\", \"then\" and \"else\" are permitted"
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], foo: :invalid", [], __ENV__)
+    end
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], do: :valid, foo: :invalid", [], __ENV__)
+    end
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], do: :valid, do: :duplicate", [], __ENV__)
+    end
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], do: :valid, then: :valid, then: :duplicate", [], __ENV__)
+    end
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], do: :valid, then: :valid, else: :valid, else: :duplicate", [], __ENV__)
+    end
+
+    assert_raise ArgumentError, error_message, fn ->
+      Code.eval_string("wait [1, 2, 3], do: false, else: :wrong, then: :order", [], __ENV__)
+    end
+  end
 end
