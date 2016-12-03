@@ -106,7 +106,7 @@ defmodule RetryTest do
   end
 
   test "wait does not have to retry execution when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     end
 
@@ -114,7 +114,7 @@ defmodule RetryTest do
   end
 
   test "then executes only when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     then
       {:ok, "More awesome"}
@@ -124,7 +124,7 @@ defmodule RetryTest do
   end
 
   test "then does not execute when result remains false" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       false
     then
       {:ok, "More awesome"}
@@ -134,7 +134,7 @@ defmodule RetryTest do
   end
 
   test "then does not execute when result remains nil" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       nil
     then
       {:ok, "More awesome"}
@@ -144,7 +144,7 @@ defmodule RetryTest do
   end
 
   test "else does not execute when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     then
       {:ok, "More awesome"}
@@ -156,7 +156,7 @@ defmodule RetryTest do
   end
 
   test "else executes when result remains false" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       false
     then
       {:ok, "More awesome"}
@@ -168,7 +168,7 @@ defmodule RetryTest do
   end
 
   test "else executes when result remains nil" do
-    result = wait lin_backoff(500, 1) |> take(5) do
+    result = wait lin_backoff(500, 1) |> take(2) do
       nil
     then
       {:ok, "More awesome"}
