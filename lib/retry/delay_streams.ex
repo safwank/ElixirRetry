@@ -12,7 +12,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry exp_backoff do
+      retry with: exp_backoff do
         # ...
       end
 
@@ -29,7 +29,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry lin_backoff(@fibonacci) do
+      retry with: lin_backoff(@fibonacci) do
         # ...
       end
 
@@ -48,7 +48,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry exp_backoff |> randomize do
+      retry with: exp_backoff |> randomize do
         # ...
       end
 
@@ -71,7 +71,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry exp_backoff |> cap(10_000) do
+      retry with: exp_backoff |> cap(10_000) do
         # ...
       end
 
@@ -95,7 +95,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry exp_backoff |> expiry(1000) do
+      retry with: exp_backoff |> expiry(1_000) do
         # ...
       end
 
