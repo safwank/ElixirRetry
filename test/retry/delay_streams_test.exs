@@ -21,31 +21,32 @@ defmodule Retry.DelayStreamsTest do
   end
 
   test "delay streams can be capped" do
-    exp_backoff
-    |> cap(1000)
-    |> Stream.take(10)
-    |> Enum.all?(&(&1 <= 1000))
+    assert exp_backoff
+      |> cap(1_000)
+      |> Stream.take(10)
+      |> Enum.all?(&(&1 <= 1_000))
   end
 
-  test "expiry/1 limits life time" do
+  test "expiry/1 limits lifetime" do
     {elapsed, _} = :timer.tc fn ->
-      Stream.cycle([500])
-      |> expiry(1000)
+      [500]
+      |> Stream.cycle
+      |> expiry(1_000)
       |> Enum.each(&:timer.sleep(&1))
     end
 
-    assert_in_delta elapsed/1000, 1000, 10
+    assert_in_delta elapsed/1_000, 1_000, 10
   end
 
   test "expiry/1 doesn't mess up delays" do
-    assert exp_backoff |> Enum.take(5) ==
-      exp_backoff |> expiry(1000) |> Enum.take(5)
+    assert exp_backoff |> Enum.take(5) == exp_backoff |> expiry(1_000) |> Enum.take(5)
   end
 
   test "ramdomize/1 randomizes streams" do
-    delays = Stream.cycle([500])
-    |> randomize
-    |> Enum.take(100)
+    delays = [500]
+      |> Stream.cycle()
+      |> randomize
+      |> Enum.take(100)
 
     Enum.each(delays, fn (delay) ->
       assert_in_delta delay, 500, 500 * 0.1 + 1
@@ -56,9 +57,10 @@ defmodule Retry.DelayStreamsTest do
   end
 
   test "ramdomize/2 randomizes streams" do
-    delays = Stream.cycle([500])
-    |> randomize(0.2)
-    |> Enum.take(100)
+    delays = [500]
+      |> Stream.cycle()
+      |> randomize(0.2)
+      |> Enum.take(100)
 
     Enum.each(delays, fn (delay) ->
       assert_in_delta delay, 500, 500 * 0.2 + 1
