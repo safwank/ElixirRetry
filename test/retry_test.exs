@@ -101,6 +101,26 @@ defmodule RetryTest do
     assert result == {:ok, "Everything's so awesome!"}
   end
 
+  test "then should execute only when the do clause is truthy" do
+    result = wait lin_backoff(500, 1) |> take(5) do
+      {:ok, "Everything's so awesome!"}
+    then
+      {:ok, "More awesome"}
+    end
+
+    assert result == {:ok, "More awesome"}
+  end
+
+  test "then should not execute when the do clause is falsy" do
+    result = wait lin_backoff(500, 1) |> take(5) do
+      false
+    then
+      {:ok, "More awesome"}
+    end
+
+    assert result == false
+  end
+
   # backward compatibility tests
   # -----
 

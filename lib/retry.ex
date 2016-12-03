@@ -197,18 +197,49 @@ defmodule Retry do
   """
   defmacro wait([with: stream_builder], do: block) do
     quote do
+      result =
+        unquote(delays_from(stream_builder))
+        |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+          :timer.sleep(delay)
+
+          case unquote(block) do
+            false = result  -> {:cont, result}
+            nil = result    -> {:cont, result}
+            result          -> {:halt, result}
+          end
+        end)
+    end
+  end
+
+  # Retry.do_waits(true, [do: {:__block__, [line: 151], [{:ok, "Everything's so awesome!"}, {:then, [line: 154], nil}, {:ok, "More awesome"}]}])
+  defmacro wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
+    quote do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
         :timer.sleep(delay)
 
-        case unquote(block) do
+        case unquote(do_clause) do
           false = result  -> {:cont, result}
           nil = result    -> {:cont, result}
           result          -> {:halt, result}
         end
       end)
+      |> case do
+        x when x in [false, nil] -> x
+        _ -> unquote(then_clause)
+      end
     end
   end
+
+  # def then({:error, _} = result, do: _block), do: result
+  # def then(:error, do: _block), do: :error
+  # def then(nil, do: _block), do: nil
+  # def then(false, do: _block), do: false
+  # def then(_result, do: block) do
+  #   quote do
+  #     unquote(block)
+  #   end
+  # end
 
   defp block_runner(block) do
     quote do
