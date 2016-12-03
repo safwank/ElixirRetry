@@ -70,12 +70,43 @@ This will retry failures forever, waiting .5 seconds between attempts.
 
 ### Waiting
 
-Similar to `retry(with: _, do: _)`, the `wait(with: _, do: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
+Similar to `retry(with: _, do: _)`, the `wait(delay_stream, do: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
 
 ```elixir
-result = wait with: lin_backoff(100, 1) |> expiry(1_000) do
+result = wait lin_backoff(100, 1) |> expiry(1_000) do
   we_there_yet?
 end
 ```
 
 This example retries every 100 milliseconds and expires after 1 second.
+
+In addition, an optional `then` block can be given as a continuation which evaluates only when the `do` block evaluates to a truthy value.
+
+```elixir
+wait lin_backoff(500, 1) |> take(5) do
+  we_there_yet?
+then
+  {:ok, "We have arrived!"}
+end
+```
+
+It's also possible to specify an `else` block which evaluates when the `do` block remains falsy after timeout.
+
+```elixir
+wait lin_backoff(500, 1) |> take(5) do
+  we_there_yet?
+then
+  {:ok, "We have arrived!"}
+else
+  {:error, "We're still on our way :("}
+end
+```
+
+Pretty nifty for those pesky asynchronous tests and building more reliable systems in general!
+
+## Migrating from v0.5 to v0.6
+
+Please be aware of the following breaking changes in v0.6:
+
+- For simplicity, the `wait` macro no longer takes the `with` key for the delay stream.
+- The old, non-composable `retry` and `backoff` macros have been retired in favor of the newer composable counterparts.
