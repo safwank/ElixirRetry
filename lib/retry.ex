@@ -144,7 +144,7 @@ defmodule Retry do
   end
 
   defp build_wait(stream_builder, do: do_clause) do
-    build_wait(stream_builder, do: do_clause, then: do_clause)
+    build_wait(stream_builder, do: do_clause, then: nil)
   end
 
   defp build_wait(stream_builder, do: do_clause, then: then_clause) do
@@ -160,8 +160,13 @@ defmodule Retry do
         end
       end)
       |> case do
-        x when x in [false, nil] -> x
-        _ -> unquote(then_clause)
+        x when x in [false, nil] ->
+          x
+        x ->
+          case unquote(then_clause) do
+            nil -> x
+            then -> then
+          end
       end
     end
   end
