@@ -112,7 +112,7 @@ defmodule Retry do
   @doc """
 
   Wait for a block of code to be truthy delaying between each attempt
-  the duration specified by the next item in the `with` delay stream.
+  the duration specified by the next item in the delay stream.
 
   ## `wait` example
 
@@ -134,20 +134,37 @@ defmodule Retry do
         {:ok, "We have arrived!"}
       end
 
+  It's also possible to specify an `else` block which evaluates
+  when the `do` block remains falsy after timeout.
+
+  ### `wait-then-else` example
+
+      wait lin_backoff(500, 1) |> take(5) do
+        we_there_yet?
+      then
+        {:ok, "We have arrived!"}
+      else
+        {:error, "We're still on our way :("}
+      end
+
   """
   defmacro wait(stream_builder, clauses) do
     build_wait(stream_builder, clauses)
   end
 
+  defp build_wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}, else: else_clause) do
+    build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause)
+  end
+
   defp build_wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
-    build_wait(stream_builder, do: do_clause, then: then_clause)
+    build_wait(stream_builder, do: do_clause, then: then_clause, else: nil)
   end
 
   defp build_wait(stream_builder, do: do_clause) do
-    build_wait(stream_builder, do: do_clause, then: nil)
+    build_wait(stream_builder, do: do_clause, then: nil, else: nil)
   end
 
-  defp build_wait(stream_builder, do: do_clause, then: then_clause) do
+  defp build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause) do
     quote do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
@@ -161,11 +178,14 @@ defmodule Retry do
       end)
       |> case do
         x when x in [false, nil] ->
-          x
+          case unquote(else_clause) do
+            nil -> x
+            e -> e
+          end
         x ->
           case unquote(then_clause) do
             nil -> x
-            then -> then
+            t -> t
           end
       end
     end

@@ -142,4 +142,40 @@ defmodule RetryTest do
 
     refute result
   end
+
+  test "else does not execute when result is truthy" do
+    result = wait lin_backoff(500, 1) |> take(5) do
+      {:ok, "Everything's so awesome!"}
+    then
+      {:ok, "More awesome"}
+    else
+      {:error, "Not awesome"}
+    end
+
+    assert result == {:ok, "More awesome"}
+  end
+
+  test "else executes when result remains false" do
+    result = wait lin_backoff(500, 1) |> take(5) do
+      false
+    then
+      {:ok, "More awesome"}
+    else
+      {:error, "Not awesome"}
+    end
+
+    assert result == {:error, "Not awesome"}
+  end
+
+  test "else executes when result remains nil" do
+    result = wait lin_backoff(500, 1) |> take(5) do
+      nil
+    then
+      {:ok, "More awesome"}
+    else
+      {:error, "Not awesome"}
+    end
+
+    assert result == {:error, "Not awesome"}
+  end
 end
