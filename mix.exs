@@ -4,7 +4,7 @@ defmodule Retry.Mixfile do
   def project do
     [
       app: :retry,
-      name: "elixir_retry",
+      name: "retry",
       description: "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
       version: "0.6.0",
       elixir: "~> 1.1",
