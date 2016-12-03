@@ -82,32 +82,6 @@ defmodule Retry do
 
   @doc """
 
-  Retry a block of code a maximum number of times with a fixed delay between
-  attempts.
-
-  Example
-
-      retry 5 in 500 do
-      # interact with external service
-      end
-
-  Runs the block up to 5 times with a half second sleep between each
-  attempt. Execution is deemed a failure if the block returns `{:error, _}` or
-  raises a runtime error.
-
-  """
-  defmacro retry({:in, _, [retries, sleep]}, do: block) do
-    quote do
-      import Stream
-
-      retry([with: [unquote(sleep)]
-      |> cycle
-      |> take(unquote(retries))], do: unquote(block))
-    end
-  end
-
-  @doc """
-
   Retry a block of code until `halt` is emitted delaying between each attempt
   the duration specified by the next item in the `with` delay stream.
 
@@ -132,51 +106,6 @@ defmodule Retry do
         :timer.sleep(delay)
         unquote(block)
       end)
-    end
-  end
-
-  @doc """
-
-  Retry a block of code with a exponential backoff delay between attempts.
-
-  Example
-
-      backoff 1000, delay_cap: 100 do
-      # interact with external service
-      end
-
-  Runs the block repeated until it succeeds or 1 second elapses with an
-  exponentially increasing delay between attempts. Execution is deemed a failure
-  if the block returns `{:error, _}` or raises a runtime error.
-
-  The `delay_cap` is optional. If specified it will be the max duration of any
-  delay. In the example this is saying never delay more than 100ms between
-  attempts. Omitting `delay_cap` is the same as setting it to `:infinity`.
-
-  """
-  defmacro backoff(time_budget, do: block) do
-    quote do
-      import Stream
-
-      retry(
-        [with: exp_backoff
-               |> randomize
-               |> expiry(unquote(time_budget))],
-        do: unquote(block)
-      )
-    end
-  end
-  defmacro backoff(time_budget, delay_cap: delay_cap, do: block) do
-    quote do
-      import Stream
-
-      retry(
-        [with: exp_backoff
-               |> randomize
-               |> cap(unquote(delay_cap))
-               |> expiry(unquote(time_budget))],
-        do: unquote(block)
-      )
     end
   end
 
@@ -211,7 +140,6 @@ defmodule Retry do
     end
   end
 
-  # Retry.do_waits(true, [do: {:__block__, [line: 151], [{:ok, "Everything's so awesome!"}, {:then, [line: 154], nil}, {:ok, "More awesome"}]}])
   defmacro wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
     quote do
       unquote(delays_from(stream_builder))
