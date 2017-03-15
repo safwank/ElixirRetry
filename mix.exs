@@ -11,8 +11,8 @@ defmodule Retry.Mixfile do
       source_url: "https://github.com/safwank/ElixirRetry",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
-      deps: deps,
-      package: package,
+      deps: deps(),
+      package: package(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         "credo": :test,
