@@ -17,9 +17,9 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  def exp_backoff do
+  def exp_backoff(initial_delay \\ 10) do
     Stream.unfold(1, fn failures ->
-      {:erlang.round(10 * :math.pow(2, failures)), failures + 1}
+      {:erlang.round(initial_delay * :math.pow(2, failures)), failures + 1}
     end)
   end
 
