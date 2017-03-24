@@ -11,6 +11,15 @@ defmodule Retry.DelayStreamsTest do
     end)
   end
 
+  test "exponential backoff initial_delay" do
+    initial_delay = 100
+    exp_backoff(initial_delay)
+    |> Enum.take(1)
+    |> Enum.map(fn delay ->
+      assert delay == initial_delay * 2
+    end)
+  end
+
   test "lin_backoff/2" do
     lin_backoff(10, 1.5)
     |> Enum.take(5)
