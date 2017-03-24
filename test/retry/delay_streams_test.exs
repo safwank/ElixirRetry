@@ -3,7 +3,7 @@ defmodule Retry.DelayStreamsTest do
   import Retry.DelayStreams
 
   test "exponential backoff" do
-    exp_backoff
+    exp_backoff()
     |> Enum.take(5)
     |> Enum.scan(fn (delay, last_delay) ->
       assert delay > last_delay
@@ -30,7 +30,7 @@ defmodule Retry.DelayStreamsTest do
   end
 
   test "delay streams can be capped" do
-    assert exp_backoff
+    assert exp_backoff()
       |> cap(1_000)
       |> Stream.take(10)
       |> Enum.all?(&(&1 <= 1_000))
@@ -48,7 +48,7 @@ defmodule Retry.DelayStreamsTest do
   end
 
   test "expiry/1 doesn't mess up delays" do
-    assert exp_backoff |> Enum.take(5) == exp_backoff |> expiry(1_000) |> Enum.take(5)
+    assert exp_backoff() |> Enum.take(5) == exp_backoff() |> expiry(1_000) |> Enum.take(5)
   end
 
   test "ramdomize/1 randomizes streams" do
