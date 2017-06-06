@@ -4,6 +4,7 @@ defmodule RetryTest do
 
   use Retry
   doctest Retry
+  defmodule CustomError, do: defexception message: "custom error!"
 
   test "retry retries execution for specified attempts when result is error tuple" do
     {elapsed, _} = :timer.tc fn ->
@@ -34,6 +35,18 @@ defmodule RetryTest do
       assert_raise RuntimeError, fn ->
         retry with: lin_backoff(500, 1) |> take(5) do
           raise "Error"
+        end
+      end
+    end
+
+    assert elapsed/1000 >= 2500
+  end
+
+  test "retry retries execution when a whitelisted exception is raised" do
+    {elapsed, _} = :timer.tc fn ->
+      assert_raise CustomError, fn ->
+        retry [CustomError], with: lin_backoff(500, 1) |> take(5) do
+          raise CustomError
         end
       end
     end

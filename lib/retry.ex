@@ -46,6 +46,30 @@ defmodule Retry do
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
+  If the block raises any of the exceptions specified in `exceptions` a retry will
+  be attempted, other exceptions will stop execution.
+
+  Example
+
+      use Retry
+      import Stream
+
+      retry [CustomError], with: exp_backoff |> cap(1_000) |> expiry(1_000) do
+      # interact with external service
+      end
+
+  """
+  defmacro retry(exceptions, [with: _] = opts, do: block) do
+    do_retry(exceptions, opts, do: block)
+  end
+
+  @doc """
+
+  Retry a block of code delaying between each attempt the duration specified by
+  the next item in the `with` delay stream.
+
+  Calls `retry/3` with `RuntimeError` as the only whitelisted exception.
+
   Example
 
       use Retry
@@ -64,20 +88,8 @@ defmodule Retry do
       end
 
   """
-  defmacro retry([with: stream_builder], do: block) do
-    quote do
-      fun = unquote(block_runner(block))
-
-      unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
-        :timer.sleep(delay)
-        fun.()
-      end)
-      |> case do
-        {:exception, e} -> raise e
-        result          -> result
-      end
-    end
+  defmacro retry([with: _] = opts, do: block) do
+    do_retry([RuntimeError], opts, do: block)
   end
 
   @doc """
@@ -195,7 +207,23 @@ defmodule Retry do
     raise(ArgumentError, "invalid syntax, only \"wait\", \"then\" and \"else\" are permitted")
   end
 
-  defp block_runner(block) do
+  defp do_retry(exceptions, [with: stream_builder], do: block) do
+    quote do
+      fun = unquote(block_runner(block, exceptions))
+
+      unquote(delays_from(stream_builder))
+      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+        :timer.sleep(delay)
+        fun.()
+      end)
+      |> case do
+        {:exception, e} -> raise e
+        result          -> result
+      end
+    end
+  end
+
+  defp block_runner(block, exceptions) do
     quote do
       fn ->
         try do
@@ -205,7 +233,7 @@ defmodule Retry do
             result               -> {:halt, result}
           end
         rescue
-          e in RuntimeError      -> {:cont, {:exception, e}}
+          e in unquote(exceptions) -> {:cont, {:exception, e}}
         end
       end
     end
