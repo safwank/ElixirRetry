@@ -47,7 +47,8 @@ defmodule Retry do
   the next item in the `with` delay stream.
 
   If the block raises any of the exceptions specified in `exceptions` a retry will
-  be attempted, other exceptions will stop execution.
+  be attempted, other exceptions will not be rescued or retried.
+  default is `[RuntimeError]`.
 
   Example
 
@@ -59,37 +60,20 @@ defmodule Retry do
       end
 
   """
-  defmacro retry(exceptions, [with: _] = opts, do: block) do
-    do_retry(exceptions, opts, do: block)
-  end
+  defmacro retry(exceptions \\ [RuntimeError], [with: stream_builder], do: block) do
+    quote do
+      fun = unquote(block_runner(block, exceptions))
 
-  @doc """
-
-  Retry a block of code delaying between each attempt the duration specified by
-  the next item in the `with` delay stream.
-
-  Calls `retry/3` with `RuntimeError` as the only whitelisted exception.
-
-  Example
-
-      use Retry
-      import Stream
-
-      retry with: exp_backoff |> cap(1_000) |> expiry(1_000) do
-      # interact with external service
+      unquote(delays_from(stream_builder))
+      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+        :timer.sleep(delay)
+        fun.()
+      end)
+      |> case do
+        {:exception, e} -> raise e
+        result          -> result
       end
-
-      retry with: linear_backoff(@fibonacci) |> cap(1_000) |> take(10) do
-      # interact with external service
-      end
-
-      retry with: cycle([500]) |> take(10) do
-      # interact with external service
-      end
-
-  """
-  defmacro retry([with: _] = opts, do: block) do
-    do_retry([RuntimeError], opts, do: block)
+    end
   end
 
   @doc """
@@ -205,22 +189,6 @@ defmodule Retry do
 
   defp build_wait(_stream_builder, _clauses) do
     raise(ArgumentError, "invalid syntax, only \"wait\", \"then\" and \"else\" are permitted")
-  end
-
-  defp do_retry(exceptions, [with: stream_builder], do: block) do
-    quote do
-      fun = unquote(block_runner(block, exceptions))
-
-      unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
-        :timer.sleep(delay)
-        fun.()
-      end)
-      |> case do
-        {:exception, e} -> raise e
-        result          -> result
-      end
-    end
   end
 
   defp block_runner(block, exceptions) do
