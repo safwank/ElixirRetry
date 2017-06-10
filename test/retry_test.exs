@@ -1,9 +1,11 @@
 defmodule RetryTest do
   use ExUnit.Case, async: true
+  use Retry
+
   import Stream
 
-  use Retry
   doctest Retry
+
   defmodule CustomError, do: defexception message: "custom error!"
 
   test "retry retries execution for specified attempts when result is error tuple" do

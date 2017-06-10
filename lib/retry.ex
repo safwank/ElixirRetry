@@ -46,9 +46,9 @@ defmodule Retry do
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
-  If the block raises any of the exceptions specified in `exceptions` a retry will
-  be attempted, other exceptions will not be rescued or retried.
-  default is `[RuntimeError]`.
+  If the block raises any of the exceptions specified in `exceptions`, a retry will
+  be attempted. Other exceptions will not be retried. If `exceptions` is not specified,
+  it defaults to `[RuntimeError]`.
 
   Example
 
