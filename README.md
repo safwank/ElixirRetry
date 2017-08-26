@@ -30,14 +30,14 @@ Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for t
 
 ### Retrying
 
-The `retry(exceptions, with: _, do: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
+The `retry([with: _,] do: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
 
-An optional list of exceptions can be specified as the first argument if you need to retry anything other than runtime errors.
+An optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than runtime errors, e.g. `retry([with: _, rescue_only: [CustomError]], do: _)`.
 
 #### Example -- exponential backoff
 
 ```elixir
-result = retry [TimeoutError], with: exp_backoff |> randomize |> expiry(10_000) do
+result = retry with: exp_backoff |> randomize |> expiry(10_000), rescue_only: [TimeoutError] do
   ExternalApi.do_something # fails if other system is down
 end
 ```
