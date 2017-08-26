@@ -10,54 +10,54 @@ defmodule RetryTest do
 
   test "retry retries execution for specified attempts when result is error tuple" do
     {elapsed, _} = :timer.tc fn ->
-      result = retry with: lin_backoff(500, 1) |> take(5) do
+      result = retry with: lin_backoff(50, 1) |> take(5) do
         {:error, "Error"}
       end
 
       assert result == {:error, "Error"}
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "retry retries execution for specified attempts when result is error atom" do
     {elapsed, _} = :timer.tc fn ->
-      result = retry with: lin_backoff(500, 1) |> take(5) do
+      result = retry with: lin_backoff(50, 1) |> take(5) do
         :error
       end
 
       assert result == :error
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "retry retries execution for specified attempts when error is raised" do
     {elapsed, _} = :timer.tc fn ->
       assert_raise RuntimeError, fn ->
-        retry with: lin_backoff(500, 1) |> take(5) do
+        retry with: lin_backoff(50, 1) |> take(5) do
           raise "Error"
         end
       end
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "retry retries execution when a whitelisted exception is raised" do
     {elapsed, _} = :timer.tc fn ->
       assert_raise CustomError, fn ->
-        retry with: lin_backoff(500, 1) |> take(5), rescue_only: [CustomError] do
+        retry with: lin_backoff(50, 1) |> take(5), rescue_only: [CustomError] do
           raise CustomError
         end
       end
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "retry does not have to retry execution when there is no error" do
-    result = retry with: lin_backoff(500, 1) |> take(5) do
+    result = retry with: lin_backoff(50, 1) |> take(5) do
       {:ok, "Everything's so awesome!"}
     end
 
@@ -73,23 +73,23 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert round(elapsed/1000) in 425..450
+    assert round(elapsed/1_000) in 425..450
   end
 
   test "retry_while retries execution for specified attempts when halt is not emitted" do
     {elapsed, _} = :timer.tc fn ->
-      result = retry_while with: lin_backoff(500, 1) |> take(5) do
+      result = retry_while with: lin_backoff(50, 1) |> take(5) do
         {:cont, "not finishing"}
       end
 
       assert result == "not finishing"
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "retry_while does not have to retry execution when halt is emitted" do
-    result = retry_while with: lin_backoff(500, 1) |> take(5) do
+    result = retry_while with: lin_backoff(50, 1) |> take(5) do
       {:halt, "Everything's so awesome!"}
     end
 
@@ -98,30 +98,30 @@ defmodule RetryTest do
 
   test "wait retries execution for specified attempts when result is false" do
     {elapsed, _} = :timer.tc fn ->
-      result = wait lin_backoff(500, 1) |> expiry(2_500) do
+      result = wait lin_backoff(50, 1) |> expiry(250) do
         false
       end
 
       refute result
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "wait retries execution for specified attempts when result is nil" do
     {elapsed, _} = :timer.tc fn ->
-      result = wait lin_backoff(500, 1) |> take(5) do
+      result = wait lin_backoff(50, 1) |> take(5) do
         nil
       end
 
       refute result
     end
 
-    assert elapsed/1000 >= 2500
+    assert elapsed/1_000 >= 250
   end
 
   test "wait does not have to retry execution when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     end
 
@@ -129,7 +129,7 @@ defmodule RetryTest do
   end
 
   test "then executes only when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     then
       {:ok, "More awesome"}
@@ -139,7 +139,7 @@ defmodule RetryTest do
   end
 
   test "then does not execute when result remains false" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       false
     then
       {:ok, "More awesome"}
@@ -149,7 +149,7 @@ defmodule RetryTest do
   end
 
   test "then does not execute when result remains nil" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       nil
     then
       {:ok, "More awesome"}
@@ -159,7 +159,7 @@ defmodule RetryTest do
   end
 
   test "else does not execute when result is truthy" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       {:ok, "Everything's so awesome!"}
     then
       {:ok, "More awesome"}
@@ -171,7 +171,7 @@ defmodule RetryTest do
   end
 
   test "else executes when result remains false" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       false
     then
       {:ok, "More awesome"}
@@ -183,7 +183,7 @@ defmodule RetryTest do
   end
 
   test "else executes when result remains nil" do
-    result = wait lin_backoff(500, 1) |> take(2) do
+    result = wait lin_backoff(50, 1) |> take(2) do
       nil
     then
       {:ok, "More awesome"}
