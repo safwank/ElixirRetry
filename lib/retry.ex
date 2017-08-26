@@ -46,21 +46,24 @@ defmodule Retry do
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
-  If the block raises any of the exceptions specified in `exceptions`, a retry will
-  be attempted. Other exceptions will not be retried. If `exceptions` is not specified,
-  it defaults to `[RuntimeError]`.
+  If the block raises any of the exceptions specified in `rescue_only`, a retry
+  will be attempted. Other exceptions will not be retried. If `rescue_only` is
+  not specified, it defaults to `[RuntimeError]`.
 
   Example
 
       use Retry
       import Stream
 
-      retry [CustomError], with: exp_backoff |> cap(1_000) |> expiry(1_000) do
-      # interact with external service
+      retry with: exp_backoff |> cap(1_000) |> expiry(1_000), rescue_only: [CustomError] do
+        # interact with external service
       end
 
   """
-  defmacro retry(exceptions \\ [RuntimeError], [with: stream_builder], do: block) do
+  defmacro retry(opts \\ [], do: block) do
+    stream_builder = opts[:with]
+    exceptions     = opts[:rescue_only] || [RuntimeError]
+
     quote do
       fun = unquote(block_runner(block, exceptions))
 
