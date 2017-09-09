@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.7"}]
+    [{:retry, "~> 0.8"}]
   end
 ```
 
