@@ -33,6 +33,8 @@ defmodule Retry do
 
   """
 
+  @default_retry_options [rescue_only: [RuntimeError]]
+
   @doc false
   defmacro __using__(_opts) do
     quote do
@@ -60,12 +62,11 @@ defmodule Retry do
       end
 
   """
-  defmacro retry(opts \\ [], do: block) do
-    stream_builder = opts[:with]
-    exceptions     = opts[:rescue_only] || [RuntimeError]
+  defmacro retry([{:with, stream_builder} | opts], do: block) do
+    opts = Keyword.merge(@default_retry_options, opts)
 
     quote do
-      fun = unquote(block_runner(block, exceptions))
+      fun = unquote(block_runner(block, opts[:rescue_only]))
 
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
