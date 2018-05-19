@@ -45,9 +45,11 @@ defmodule RetryTest do
   end
 
   test "retry retries execution when a whitelisted exception is raised" do
+    custom_error_list = [CustomError]
+
     {elapsed, _} = :timer.tc fn ->
       assert_raise CustomError, fn ->
-        retry with: lin_backoff(50, 1) |> take(5), rescue_only: [CustomError] do
+        retry with: lin_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
           raise CustomError
         end
       end

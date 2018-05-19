@@ -205,7 +205,12 @@ defmodule Retry do
             result               -> {:halt, result}
           end
         rescue
-          e in unquote(exceptions) -> {:cont, {:exception, e}}
+          e ->
+            if e.__struct__ in unquote(exceptions) do
+              {:cont, {:exception, e}}
+            else
+              reraise e, System.stacktrace()
+            end
         end
       end
     end
