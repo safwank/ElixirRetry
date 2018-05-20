@@ -17,7 +17,7 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "retry retries execution for specified attempts when result is error atom" do
@@ -29,7 +29,7 @@ defmodule RetryTest do
       assert result == :error
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "retry retries execution for specified attempts when error is raised" do
@@ -41,7 +41,7 @@ defmodule RetryTest do
       end
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "retry retries execution when a whitelisted exception is raised" do
@@ -55,7 +55,7 @@ defmodule RetryTest do
       end
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "retry does not have to retry execution when there is no error" do
@@ -75,7 +75,7 @@ defmodule RetryTest do
       assert result == {:error, "Error"}
     end
 
-    assert round(elapsed/1_000) in 425..450
+    assert round(elapsed / 1_000) in 425..450
   end
 
   test "retry_while retries execution for specified attempts when halt is not emitted" do
@@ -87,7 +87,7 @@ defmodule RetryTest do
       assert result == "not finishing"
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "retry_while does not have to retry execution when halt is emitted" do
@@ -107,7 +107,7 @@ defmodule RetryTest do
       refute result
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "wait retries execution for specified attempts when result is nil" do
@@ -119,7 +119,7 @@ defmodule RetryTest do
       refute result
     end
 
-    assert elapsed/1_000 >= 250
+    assert elapsed / 1_000 >= 250
   end
 
   test "wait does not have to retry execution when result is truthy" do

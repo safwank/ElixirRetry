@@ -6,7 +6,7 @@ defmodule Retry.Mixfile do
       app: :retry,
       name: "retry",
       description: "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
-      version: "0.8.1",
+      version: "0.8.2",
       elixir: "~> 1.4",
       source_url: "https://github.com/safwank/ElixirRetry",
       build_embedded: Mix.env == :prod,
@@ -32,9 +32,9 @@ defmodule Retry.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.8", only: :test},
-      {:excoveralls, "~> 0.7", only: :test},
-      {:ex_doc, "~> 0.16", only: :dev},
+      {:credo, "~> 0.9", only: :test},
+      {:excoveralls, "~> 0.8", only: :test},
+      {:ex_doc, "~> 0.18", only: :dev},
       {:earmark, "~> 1.2", only: :dev}
     ]
   end

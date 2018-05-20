@@ -44,7 +44,7 @@ defmodule Retry.DelayStreamsTest do
       |> Enum.each(&:timer.sleep(&1))
     end
 
-    assert_in_delta elapsed/1_000, 100, 10
+    assert_in_delta elapsed / 1_000, 100, 10
   end
 
   test "expiry/1 doesn't mess up delays" do
