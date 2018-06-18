@@ -32,6 +32,18 @@ defmodule RetryTest do
     assert elapsed / 1_000 >= 250
   end
 
+  test "retry retries execution for specified attempts when result is atom is configured as :retry" do
+    {elapsed, _} = :timer.tc fn ->
+      result = retry with: lin_backoff(50, 1) |> take(5), atoms: [:retry] do
+        :retry
+      end
+
+      assert result == :retry
+    end
+
+    assert elapsed / 1_000 >= 250
+  end
+
   test "retry retries execution for specified attempts when error is raised" do
     {elapsed, _} = :timer.tc fn ->
       assert_raise RuntimeError, fn ->
