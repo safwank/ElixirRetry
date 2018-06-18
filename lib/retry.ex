@@ -192,7 +192,7 @@ defmodule Retry do
   end
 
   defp build_wait(_stream_builder, _clauses) do
-    raise(ArgumentError, "invalid syntax, only \"wait\", \"then\" and \"else\" are permitted")
+    raise(ArgumentError, ~s/invalid syntax, only "wait", "then" and "else" are permitted/)
   end
 
   defp block_runner(block, exceptions) do
