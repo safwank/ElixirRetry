@@ -33,7 +33,7 @@ defmodule Retry do
 
   """
 
-  @default_retry_options [rescue_only: [RuntimeError]]
+  @default_retry_options [atoms: [:error], rescue_only: [RuntimeError]]
 
   @doc false
   defmacro __using__(_opts) do
@@ -66,7 +66,7 @@ defmodule Retry do
     opts = Keyword.merge(@default_retry_options, opts)
 
     quote do
-      fun = unquote(block_runner(block, opts[:rescue_only]))
+      fun = unquote(block_runner(block, opts))
 
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn(delay, _last_result) ->
@@ -195,13 +195,28 @@ defmodule Retry do
     raise(ArgumentError, "invalid syntax, only \"wait\", \"then\" and \"else\" are permitted")
   end
 
-  defp block_runner(block, exceptions) do
+  defp block_runner(block, opts) do
+    atoms = Keyword.get(opts, :atoms)
+    exceptions = Keyword.get(opts, :rescue_only)
+
     quote do
       fn ->
         try do
           case unquote(block) do
-            {:error, _} = result -> {:cont, result}
-            :error = result      -> {:cont, result}
+            {atom, _} = result ->
+              if atom in unquote(atoms) do
+                {:cont, result}
+              else
+                {:halt, result}
+              end
+
+            result ->
+              if is_atom(result) and result in unquote(atoms) do
+                {:cont, result}
+              else
+                {:halt, result}
+              end
+
             result               -> {:halt, result}
           end
         rescue
