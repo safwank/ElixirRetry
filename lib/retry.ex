@@ -69,13 +69,13 @@ defmodule Retry do
       fun = unquote(block_runner(block, opts))
 
       unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+      |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
         fun.()
       end)
       |> case do
         {:exception, e} -> raise e
-        result          -> result
+        result -> result
       end
     end
   end
@@ -102,7 +102,7 @@ defmodule Retry do
   defmacro retry_while([with: stream_builder], do: block) do
     quote do
       unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+      |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
         unquote(block)
       end)
@@ -152,7 +152,11 @@ defmodule Retry do
     build_wait(stream_builder, clauses)
   end
 
-  defp build_wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}, else: else_clause) do
+  defp build_wait(
+         stream_builder,
+         do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]},
+         else: else_clause
+       ) do
     build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause)
   end
 
@@ -167,13 +171,13 @@ defmodule Retry do
   defp build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause) do
     quote do
       unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(nil, fn(delay, _last_result) ->
+      |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
 
         case unquote(do_clause) do
-          false = result  -> {:cont, result}
-          nil = result    -> {:cont, result}
-          result          -> {:halt, result}
+          false = result -> {:cont, result}
+          nil = result -> {:cont, result}
+          result -> {:halt, result}
         end
       end)
       |> case do
@@ -182,6 +186,7 @@ defmodule Retry do
             nil -> x
             e -> e
           end
+
         x ->
           case unquote(then_clause) do
             nil -> x
@@ -192,7 +197,7 @@ defmodule Retry do
   end
 
   defp build_wait(_stream_builder, _clauses) do
-    raise(ArgumentError, ~s/invalid syntax, only "wait", "then" and "else" are permitted/)
+    raise(ArgumentError, ~s(invalid syntax, only "wait", "then" and "else" are permitted))
   end
 
   defp block_runner(block, opts) do
@@ -217,7 +222,8 @@ defmodule Retry do
                 {:halt, result}
               end
 
-            result               -> {:halt, result}
+            result ->
+              {:halt, result}
           end
         rescue
           e ->

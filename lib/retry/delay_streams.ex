@@ -80,9 +80,11 @@ defmodule Retry.DelayStreams do
 
   """
   def cap(delays, max) do
-    Stream.map(delays,
-      fn d when d <= max -> d
-        _  -> max
+    Stream.map(
+      delays,
+      fn
+        d when d <= max -> d
+        _ -> max
       end
     )
   end
@@ -111,12 +113,16 @@ defmodule Retry.DelayStreams do
       remaining_t = Enum.max([end_t - now_t, 0])
 
       cond do
-        :at_end == status              # time expired!
-          -> {:halt, status}
-        preferred_delay > remaining_t  # one last try
-          -> {[remaining_t], :at_end}
-        true
-          -> {[preferred_delay], status}
+        # time expired!
+        :at_end == status ->
+          {:halt, status}
+
+        # one last try
+        preferred_delay > remaining_t ->
+          {[remaining_t], :at_end}
+
+        true ->
+          {[preferred_delay], status}
       end
     end)
   end
