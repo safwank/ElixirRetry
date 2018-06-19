@@ -36,15 +36,33 @@ defmodule RetryTest do
     assert elapsed / 1_000 >= 250
   end
 
-  test "retry retries execution for specified attempts when result is atom is configured as :retry" do
+  test "retry retries execution for specified attempts when result is a specified atom" do
+    retry_atom = :not_ok
+
     {elapsed, _} =
       :timer.tc(fn ->
         result =
-          retry with: lin_backoff(50, 1) |> take(5), atoms: [:retry] do
-            :retry
+          retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
+            retry_atom
           end
 
-        assert result == :retry
+        assert result == retry_atom
+      end)
+
+    assert elapsed / 1_000 >= 250
+  end
+
+  test "retry retries execution for specified attempts when result is a tuple with a specified atom" do
+    retry_atom = :not_ok
+
+    {elapsed, _} =
+      :timer.tc(fn ->
+        result =
+          retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
+            {retry_atom, "Some error message"}
+          end
+
+        assert result == {retry_atom, "Some error message"}
       end)
 
     assert elapsed / 1_000 >= 250
