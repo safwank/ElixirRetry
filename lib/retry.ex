@@ -48,7 +48,11 @@ defmodule Retry do
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
-  If the block raises any of the exceptions specified in `rescue_only`, a retry
+  If the block returns any of the atoms specified in `atoms`, a retry will be attempted.
+  Other atoms or atom-result tuples will not be retried. If `atoms` is not specified,
+  it defaults to `[:error]`.
+
+  Similary, if the block raises any of the exceptions specified in `rescue_only`, a retry
   will be attempted. Other exceptions will not be retried. If `rescue_only` is
   not specified, it defaults to `[RuntimeError]`.
 
