@@ -225,9 +225,6 @@ defmodule Retry do
               else
                 {:halt, result}
               end
-
-            result ->
-              {:halt, result}
           end
         rescue
           e ->
