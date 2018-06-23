@@ -127,25 +127,25 @@ defmodule Retry do
         we_there_yet?
       end
 
-  An optional `then` block can be given as a continuation which will
+  An optional `after` block can be given as a continuation which will
   evaluate only when the `do` block evaluates to a truthy value.
 
-  ## `wait-then` example
+  ## `wait-after` example
 
       wait lin_backoff(500, 1) |> take(5) do
         we_there_yet?
-      then
+      after
         {:ok, "We have arrived!"}
       end
 
   It's also possible to specify an `else` block which evaluates
   when the `do` block remains falsy after timeout.
 
-  ### `wait-then-else` example
+  ### `wait-after-else` example
 
       wait lin_backoff(500, 1) |> take(5) do
         we_there_yet?
-      then
+      after
         {:ok, "We have arrived!"}
       else
         {:error, "We're still on our way :("}
@@ -156,23 +156,7 @@ defmodule Retry do
     build_wait(stream_builder, clauses)
   end
 
-  defp build_wait(
-         stream_builder,
-         do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]},
-         else: else_clause
-       ) do
-    build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause)
-  end
-
-  defp build_wait(stream_builder, do: {:__block__, _, [do_clause, {:then, _, nil}, then_clause]}) do
-    build_wait(stream_builder, do: do_clause, then: then_clause, else: nil)
-  end
-
-  defp build_wait(stream_builder, do: do_clause) do
-    build_wait(stream_builder, do: do_clause, then: nil, else: nil)
-  end
-
-  defp build_wait(stream_builder, do: do_clause, then: then_clause, else: else_clause) do
+  defp build_wait(stream_builder, do: do_clause, after: after_clause, else: else_clause) do
     quote do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
@@ -192,7 +176,7 @@ defmodule Retry do
           end
 
         x ->
-          case unquote(then_clause) do
+          case unquote(after_clause) do
             nil -> x
             t -> t
           end
@@ -200,8 +184,16 @@ defmodule Retry do
     end
   end
 
+  defp build_wait(stream_builder, do: do_clause, after: after_clause) do
+    build_wait(stream_builder, do: do_clause, after: after_clause, else: nil)
+  end
+
+  defp build_wait(stream_builder, do: do_clause) do
+    build_wait(stream_builder, do: do_clause, after: nil, else: nil)
+  end
+
   defp build_wait(_stream_builder, _clauses) do
-    raise(ArgumentError, ~s(invalid syntax, only "wait", "then" and "else" are permitted))
+    raise(ArgumentError, ~s(invalid syntax, only "wait", "after" and "else" are permitted))
   end
 
   defp block_runner(block, opts) do

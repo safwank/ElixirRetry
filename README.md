@@ -83,12 +83,12 @@ end
 
 This example retries every 100 milliseconds and expires after 1 second.
 
-In addition, an optional `then` block can be given as a continuation which evaluates only when the `do` block evaluates to a truthy value.
+In addition, an optional `after` block can be given as a continuation which evaluates only when the `do` block evaluates to a truthy value.
 
 ```elixir
 wait lin_backoff(500, 1) |> take(5) do
   we_there_yet?
-then
+after
   {:ok, "We have arrived!"}
 end
 ```
@@ -98,7 +98,7 @@ It's also possible to specify an `else` block which evaluates when the `do` bloc
 ```elixir
 wait lin_backoff(500, 1) |> take(5) do
   we_there_yet?
-then
+after
   {:ok, "We have arrived!"}
 else
   {:error, "We're still on our way :("}
