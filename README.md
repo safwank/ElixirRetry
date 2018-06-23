@@ -73,37 +73,25 @@ This will retry failures forever, waiting .5 seconds between attempts.
 
 ### Waiting
 
-Similar to `retry(with: _, do: _)`, the `wait(delay_stream, do: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
+Similar to `retry(with: _, do: _)`, the `wait(delay_stream, do: _, after: _, else: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
 
 ```elixir
-result = wait lin_backoff(100, 1) |> expiry(1_000) do
+wait lin_backoff(100, 1) |> expiry(1_000) do
   we_there_yet?
+after
+  _ ->
+    {:ok, "We have arrived!"}
+else
+  _ ->
+    {:error, "We're still on our way :("}
 end
 ```
 
 This example retries every 100 milliseconds and expires after 1 second.
 
-In addition, an optional `after` block can be given as a continuation which evaluates only when the `do` block evaluates to a truthy value.
+The `after` block evaluates only when the `do` block returns a truthy value.
 
-```elixir
-wait lin_backoff(500, 1) |> take(5) do
-  we_there_yet?
-after
-  {:ok, "We have arrived!"}
-end
-```
-
-It's also possible to specify an `else` block which evaluates when the `do` block remains falsy after timeout.
-
-```elixir
-wait lin_backoff(500, 1) |> take(5) do
-  we_there_yet?
-after
-  {:ok, "We have arrived!"}
-else
-  {:error, "We're still on our way :("}
-end
-```
+On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
 
 Pretty nifty for those pesky asynchronous tests and building more reliable systems in general!
 

@@ -118,45 +118,24 @@ defmodule Retry do
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the delay stream.
 
-  ## `wait` example
+  The `after` block evaluates only when the `do` block returns a truthy value.
 
-      use Retry
-      import Stream
+  On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
 
-      wait exp_backoff |> expiry(1_000) do
-        we_there_yet?
-      end
-
-  An optional `after` block can be given as a continuation which will
-  evaluate only when the `do` block evaluates to a truthy value.
-
-  ## `wait-after` example
+  Example
 
       wait lin_backoff(500, 1) |> take(5) do
         we_there_yet?
       after
-        {:ok, "We have arrived!"}
-      end
-
-  It's also possible to specify an `else` block which evaluates
-  when the `do` block remains falsy after timeout.
-
-  ### `wait-after-else` example
-
-      wait lin_backoff(500, 1) |> take(5) do
-        we_there_yet?
-      after
-        {:ok, "We have arrived!"}
+        _ ->
+          {:ok, "We have arrived!"}
       else
-        {:error, "We're still on our way :("}
+        _ ->
+          {:error, "We're still on our way :("}
       end
 
   """
-  defmacro wait(stream_builder, clauses) do
-    build_wait(stream_builder, clauses)
-  end
-
-  defp build_wait(stream_builder, do: do_clause, after: after_clause, else: else_clause) do
+  defmacro wait(stream_builder, do: do_clause, after: after_clause, else: else_clause) do
     quote do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
@@ -170,29 +149,19 @@ defmodule Retry do
       end)
       |> case do
         x when x in [false, nil] ->
-          case unquote(else_clause) do
-            nil -> x
-            e -> e
+          case x do
+            unquote(else_clause)
           end
 
         x ->
-          case unquote(after_clause) do
-            nil -> x
-            t -> t
+          case x do
+            unquote(after_clause)
           end
       end
     end
   end
 
-  defp build_wait(stream_builder, do: do_clause, after: after_clause) do
-    build_wait(stream_builder, do: do_clause, after: after_clause, else: nil)
-  end
-
-  defp build_wait(stream_builder, do: do_clause) do
-    build_wait(stream_builder, do: do_clause, after: nil, else: nil)
-  end
-
-  defp build_wait(_stream_builder, _clauses) do
+  defmacro wait(_stream_builder, _clauses) do
     raise(ArgumentError, ~s(invalid syntax, only "wait", "after" and "else" are permitted))
   end
 
