@@ -15,6 +15,10 @@ defmodule RetryTest do
           result =
             retry with: lin_backoff(50, 1) |> take(5) do
               {:error, "Error"}
+            after
+              _ -> :ok
+            else
+              error -> error
             end
 
           assert result == {:error, "Error"}
@@ -29,6 +33,10 @@ defmodule RetryTest do
           result =
             retry with: lin_backoff(50, 1) |> take(5) do
               :error
+            after
+              _ -> :ok
+            else
+              error -> error
             end
 
           assert result == :error
@@ -45,6 +53,10 @@ defmodule RetryTest do
           result =
             retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
               retry_atom
+            after
+              _ -> :ok
+            else
+              error -> error
             end
 
           assert result == retry_atom
@@ -61,6 +73,10 @@ defmodule RetryTest do
           result =
             retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
               {retry_atom, "Some error message"}
+            after
+              _ -> :ok
+            else
+              error -> error
             end
 
           assert result == {retry_atom, "Some error message"}
@@ -75,6 +91,10 @@ defmodule RetryTest do
           assert_raise RuntimeError, fn ->
             retry with: lin_backoff(50, 1) |> take(5) do
               raise "Error"
+            after
+              _ -> :ok
+            else
+              error -> raise error
             end
           end
         end)
@@ -90,6 +110,10 @@ defmodule RetryTest do
           assert_raise CustomError, fn ->
             retry with: lin_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
               raise CustomError
+            after
+              _ -> :ok
+            else
+              error -> raise error
             end
           end
         end)
@@ -97,10 +121,31 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
+    test "does not execution when an unknown exception is raised" do
+      {elapsed, _} =
+        :timer.tc(fn ->
+          assert_raise CustomError, fn ->
+            retry with: lin_backoff(50, 1) |> take(5) do
+              raise CustomError
+            after
+              _ -> :ok
+            else
+              error -> raise error
+            end
+          end
+        end)
+
+      assert elapsed / 1_000 < 250
+    end
+
     test "does not have to retry execution when there is no error" do
       result =
         retry with: lin_backoff(50, 1) |> take(5) do
           {:ok, "Everything's so awesome!"}
+        after
+          result -> result
+        else
+          _ -> :error
         end
 
       assert result == {:ok, "Everything's so awesome!"}
@@ -112,12 +157,24 @@ defmodule RetryTest do
           result =
             retry with: [100, 75, 250] do
               {:error, "Error"}
+            after
+              _ -> :ok
+            else
+              error -> error
             end
 
           assert result == {:error, "Error"}
         end)
 
       assert round(elapsed / 1_000) in 425..450
+    end
+
+    test "with invalid clauses raises argument error" do
+      error_message = ~s/invalid syntax, only "retry", "after" and "else" are permitted/
+
+      assert_raise ArgumentError, error_message, fn ->
+        Code.eval_string("retry [1, 2, 3], foo: :invalid, bar: :not_ok", [], __ENV__)
+      end
     end
   end
 

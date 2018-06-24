@@ -56,21 +56,34 @@ defmodule Retry do
   will be attempted. Other exceptions will not be retried. If `rescue_only` is
   not specified, it defaults to `[RuntimeError]`.
 
+  The `after` block evaluates only when the `do` block returns a valid value before timeout.
+
+  On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout.
+
   Example
 
       use Retry
-      import Stream
 
       retry with: exp_backoff |> cap(1_000) |> expiry(1_000), rescue_only: [CustomError] do
         # interact with external service
+      after
+        result -> result
+      else
+        error -> error
       end
 
   """
-  defmacro retry([{:with, stream_builder} | opts], do: block) do
+  defmacro retry(
+             [{:with, stream_builder} | opts],
+             do: do_clause,
+             after: after_clause,
+             else: else_clause
+           ) do
     opts = Keyword.merge(@default_retry_options, opts)
+    atoms = Keyword.get(opts, :atoms)
 
     quote do
-      fun = unquote(block_runner(block, opts))
+      fun = unquote(block_runner(do_clause, opts))
 
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
@@ -78,10 +91,31 @@ defmodule Retry do
         fun.()
       end)
       |> case do
-        {:exception, e} -> raise e
-        result -> result
+        {:exception, e} ->
+          case e do
+            unquote(else_clause)
+          end
+
+        e = {atom, _} when atom in unquote(atoms) ->
+          case e do
+            unquote(else_clause)
+          end
+
+        e when is_atom(e) and e in unquote(atoms) ->
+          case e do
+            unquote(else_clause)
+          end
+
+        result ->
+          case result do
+            unquote(after_clause)
+          end
       end
     end
+  end
+
+  defmacro retry(_stream_builder, _clauses) do
+    raise(ArgumentError, ~s(invalid syntax, only "retry", "after" and "else" are permitted))
   end
 
   @doc """

@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.9"}]
+    [{:retry, "~> 0.10"}]
   end
 ```
 
@@ -30,19 +30,28 @@ Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for t
 
 ### Retrying
 
-The `retry([with: _,] do: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. By default, the execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
+The `retry([with: _,] do: _, after: _, else: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. By default, the execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
 
 An optional list of atoms can be specified in `:atoms` if you need to retry anything other than `:error` or `{:error, _}`, e.g. `retry([with: _, atoms: [:not_ok]], do: _)`.
 
 Similarly, an optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than `RuntimeError`, e.g. `retry([with: _, rescue_only: [CustomError]], do: _)`.
+
+The `after` block evaluates only when the `do` block returns a valid value before timeout.
+
+On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout.
 
 #### Example -- exponential backoff
 
 ```elixir
 result = retry with: exp_backoff |> randomize |> expiry(10_000), rescue_only: [TimeoutError] do
   ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  error -> error
 end
 ```
+
 This will try the block, and return the result, as soon as it succeeds. On a timeout error, this example will wait an exponentially increasing amount of time (`exp_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). Finally, it will give up entirely if the block has not succeeded within 10 seconds (`expiry/2`).
 
 #### Example -- linear backoff
@@ -50,6 +59,10 @@ This will try the block, and return the result, as soon as it succeeds. On a tim
 ```elixir
 result = retry with: lin_backoff(10, 2) |> cap(1_000) |> Stream.take(10) do
   ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  error -> error
 end
 ```
 
@@ -64,10 +77,14 @@ The `with:` option of `retry` accepts any `Stream` that yields integers. These i
 ```elixir
 result = retry with: Stream.cycle([500]) do
   ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  error -> error  
 end
 ```
 
-This will retry failures forever, waiting .5 seconds between attempts.
+This will retry failures forever, waiting 0.5 seconds between attempts.
 
 `Retry.DelayStreams` provides a set of fully composable helper functions for building useful delay behaviors such as the ones in previous examples. See the `Retry.DelayStreams` module docs for full details and addition behavior not covered here. For convenience these functions are imported by `use Retry` so you can, usually, use them without prefixing them with the module name.
 
