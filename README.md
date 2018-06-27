@@ -32,9 +32,9 @@ Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for t
 
 The `retry([with: _,] do: _, after: _, else: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. By default, the execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
 
-An optional list of atoms can be specified in `:atoms` if you need to retry anything other than `:error` or `{:error, _}`, e.g. `retry([with: _, atoms: [:not_ok]], do: _)`.
+An optional list of atoms can be specified in `:atoms` if you need to retry anything other than `:error` or `{:error, _}`, e.g. `retry([with: _, atoms: [:not_ok]], do: _, after: _, else: _)`.
 
-Similarly, an optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than `RuntimeError`, e.g. `retry([with: _, rescue_only: [CustomError]], do: _)`.
+Similarly, an optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than `RuntimeError`, e.g. `retry([with: _, rescue_only: [CustomError]], do: _, after: _, else: _)`.
 
 The `after` block evaluates only when the `do` block returns a valid value before timeout.
 
@@ -111,10 +111,3 @@ The `after` block evaluates only when the `do` block returns a truthy value.
 On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
 
 Pretty nifty for those pesky asynchronous tests and building more reliable systems in general!
-
-## Migrating from v0.5 to v0.6
-
-Please be aware of the following breaking changes in v0.6:
-
-- For simplicity, the `wait` macro no longer takes the `with` key for the delay stream.
-- The old, non-composable `retry` and `backoff` macros have been retired in favor of the newer composable counterparts.
