@@ -95,6 +95,10 @@ defmodule Retry.DelayStreams do
   life span of the stream to `time_budget`. This calculation takes the execution
   time of the block being retried into account.
 
+  The execution of the code within the block will not be interrupted, so
+  the total time of execution may run over the `time_budget` depending on how
+  long a single try will take.
+
   Example
 
       retry with: exp_backoff |> expiry(1_000) do
