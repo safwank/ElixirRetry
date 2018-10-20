@@ -9,11 +9,11 @@ defmodule Retry do
       use Retry
       import Stream
 
-      retry with: exp_backoff |> randomize |> cap(1_000) |> expiry(10_000) do
+      retry with: exponential_backoff |> randomize |> cap(1_000) |> expiry(10_000) do
       # interact with external service
       end
 
-      retry with: lin_backoff(10, @fibonacci) |> cap(1_000) |> take(10) do
+      retry with: linear_backoff(10, 2) |> cap(1_000) |> take(10) do
       # interact with external service
       end
 
@@ -24,8 +24,7 @@ defmodule Retry do
   The first retry will exponentially increase the delay, fudging each delay up
   to 10%, until the delay reaches 1 second and then give up after 10 seconds.
 
-  The second retry will linearly increase the retry from 10ms following a
-  Fibonacci pattern giving up after 10 attempts.
+  The second retry will linearly increase the retry by a factor of 2 from 10ms giving up after 10 attempts.
 
   The third example shows how we can produce a delay stream using standard
   `Stream` functionality. Any stream of integers may be used as the value of
@@ -64,7 +63,7 @@ defmodule Retry do
 
       use Retry
 
-      retry with: exp_backoff |> cap(1_000) |> expiry(1_000), rescue_only: [CustomError] do
+      retry with: exponential_backoff() |> cap(1_000) |> expiry(1_000), rescue_only: [CustomError] do
         # interact with external service
       after
         result -> result
@@ -128,7 +127,7 @@ defmodule Retry do
 
   Example
 
-      retry_while with: lin_backoff(500, 1) |> take(5) do
+      retry_while with: linear_backoff(500, 1) |> take(5) do
         call_service
         |> case do
           result = %{"errors" => true} -> {:cont, result}
@@ -158,7 +157,7 @@ defmodule Retry do
 
   Example
 
-      wait lin_backoff(500, 1) |> take(5) do
+      wait linear_backoff(500, 1) |> take(5) do
         we_there_yet?
       after
         _ ->

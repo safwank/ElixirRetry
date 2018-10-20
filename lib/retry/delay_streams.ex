@@ -17,9 +17,28 @@ defmodule Retry.DelayStreams do
       end
 
   """
+  @deprecated "Use exponential_backoff/1 instead"
   def exp_backoff(initial_delay \\ 10) do
     Stream.unfold(1, fn failures ->
       {:erlang.round(initial_delay * :math.pow(2, failures)), failures + 1}
+    end)
+  end
+
+  @doc """
+
+  Returns a stream of delays that increase exponentially.
+
+  Example
+
+      retry with: exponential_backoff do
+        # ...
+      end
+
+  """
+  def exponential_backoff(initial_delay \\ 10) do
+    Stream.unfold(0, fn failures ->
+      next_d = :erlang.round(initial_delay * :math.pow(2, failures))
+      {next_d, failures + 1}
     end)
   end
 
@@ -34,6 +53,7 @@ defmodule Retry.DelayStreams do
       end
 
   """
+  @deprecated "Use linear_backoff/1 instead"
   def lin_backoff(initial_delay, factor) do
     Stream.unfold(initial_delay, fn last_delay ->
       next_d = last_delay * factor
@@ -43,12 +63,45 @@ defmodule Retry.DelayStreams do
 
   @doc """
 
+  Returns a stream of delays that increase linearly.
+
+  Example
+
+      retry with: linear_backoff(50, 2) do
+        # ...
+      end
+
+  """
+  def linear_backoff(initial_delay, factor) do
+    Stream.unfold(0, fn failures ->
+      next_d = initial_delay + failures * factor
+      {next_d, failures + 1}
+    end)
+  end
+
+  @doc """
+
+  Returns a constant stream of delays.
+
+  Example
+
+      retry with: constant_backoff(50) do
+        # ...
+      end
+
+  """
+  def constant_backoff(delay \\ 100) do
+    Stream.repeatedly(fn -> delay end)
+  end
+
+  @doc """
+
   Returns a stream in which each element of `delays` is randomly adjusted no
   more than `proportion` of the delay.
 
   Example
 
-      retry with: exp_backoff |> randomize do
+      retry with: exponential_backoff() |> randomize do
         # ...
       end
 
@@ -71,7 +124,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry with: exp_backoff |> cap(10_000) do
+      retry with: exponential_backoff() |> cap(10_000) do
         # ...
       end
 
@@ -97,7 +150,7 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry with: exp_backoff |> expiry(1_000) do
+      retry with: exponential_backoff() |> expiry(1_000) do
         # ...
       end
 

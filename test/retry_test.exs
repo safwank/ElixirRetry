@@ -13,7 +13,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            retry with: lin_backoff(50, 1) |> take(5) do
+            retry with: linear_backoff(50, 1) |> take(5) do
               {:error, "Error"}
             after
               _ -> :ok
@@ -31,7 +31,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            retry with: lin_backoff(50, 1) |> take(5) do
+            retry with: linear_backoff(50, 1) |> take(5) do
               :error
             after
               _ -> :ok
@@ -51,7 +51,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
+            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
               retry_atom
             after
               _ -> :ok
@@ -71,7 +71,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            retry with: lin_backoff(50, 1) |> take(5), atoms: [retry_atom] do
+            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
               {retry_atom, "Some error message"}
             after
               _ -> :ok
@@ -89,7 +89,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           assert_raise RuntimeError, fn ->
-            retry with: lin_backoff(50, 1) |> take(5) do
+            retry with: linear_backoff(50, 1) |> take(5) do
               raise "Error"
             after
               _ -> :ok
@@ -108,7 +108,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           assert_raise CustomError, fn ->
-            retry with: lin_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
+            retry with: linear_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
               raise CustomError
             after
               _ -> :ok
@@ -121,11 +121,11 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
-    test "does not execution when an unknown exception is raised" do
+    test "does not retry execution when an unknown exception is raised" do
       {elapsed, _} =
         :timer.tc(fn ->
           assert_raise CustomError, fn ->
-            retry with: lin_backoff(50, 1) |> take(5) do
+            retry with: linear_backoff(50, 1) |> take(5) do
               raise CustomError
             after
               _ -> :ok
@@ -140,7 +140,7 @@ defmodule RetryTest do
 
     test "does not have to retry execution when there is no error" do
       result =
-        retry with: lin_backoff(50, 1) |> take(5) do
+        retry with: linear_backoff(50, 1) |> take(5) do
           {:ok, "Everything's so awesome!"}
         after
           result -> result
@@ -183,7 +183,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            retry_while with: lin_backoff(50, 1) |> take(5) do
+            retry_while with: linear_backoff(50, 1) |> take(5) do
               {:cont, "not finishing"}
             end
 
@@ -195,7 +195,7 @@ defmodule RetryTest do
 
     test "does not have to retry execution when halt is emitted" do
       result =
-        retry_while with: lin_backoff(50, 1) |> take(5) do
+        retry_while with: linear_backoff(50, 1) |> take(5) do
           {:halt, "Everything's so awesome!"}
         end
 
@@ -208,7 +208,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            wait lin_backoff(50, 1) |> expiry(250) do
+            wait linear_backoff(50, 1) |> expiry(250) do
               false
             after
               result -> result
@@ -226,7 +226,7 @@ defmodule RetryTest do
       {elapsed, _} =
         :timer.tc(fn ->
           result =
-            wait lin_backoff(50, 1) |> take(5) do
+            wait linear_backoff(50, 1) |> take(5) do
               nil
             after
               result -> result
@@ -242,7 +242,7 @@ defmodule RetryTest do
 
     test "does not have to retry execution when result is truthy" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           {:ok, "Everything's so awesome!"}
         after
           result -> result
@@ -255,7 +255,7 @@ defmodule RetryTest do
 
     test "after executes only when result is truthy" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           {:ok, "Everything's so awesome!"}
         after
           _ ->
@@ -269,7 +269,7 @@ defmodule RetryTest do
 
     test "after does not execute when result remains false" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           false
         after
           _ ->
@@ -283,7 +283,7 @@ defmodule RetryTest do
 
     test "after does not execute when result remains nil" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           nil
         after
           _ ->
@@ -297,7 +297,7 @@ defmodule RetryTest do
 
     test "else does not execute when result is truthy" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           {:ok, "Everything's so awesome!"}
         after
           _ ->
@@ -312,7 +312,7 @@ defmodule RetryTest do
 
     test "else executes when result remains false" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           false
         after
           _ ->
@@ -327,7 +327,7 @@ defmodule RetryTest do
 
     test "else executes when result remains nil" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           nil
         after
           _ ->
@@ -342,7 +342,7 @@ defmodule RetryTest do
 
     test "handles multiple lines in wait and multiple matches in else" do
       result =
-        wait lin_backoff(50, 1) |> take(2) do
+        wait linear_backoff(50, 1) |> take(2) do
           val = nil
           val
         after
