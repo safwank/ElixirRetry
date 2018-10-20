@@ -5,22 +5,23 @@ defmodule Retry.Mixfile do
     [
       app: :retry,
       name: "retry",
-      description: "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
+      description:
+        "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
       version: "0.11.0",
       elixir: "~> 1.5",
       source_url: "https://github.com/safwank/ElixirRetry",
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "credo": :test,
+        credo: :test,
         "coveralls.html": :test,
-        "commit": :test
+        commit: :test
       ],
       aliases: [
-        "commit": ["credo --strict", "coveralls.html --trace"]
+        commit: ["credo --strict", "coveralls.html --trace"]
       ],
       default_task: "commit"
     ]
