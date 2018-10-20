@@ -53,7 +53,7 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  @deprecated "Use linear_backoff/1 instead"
+  @deprecated "Use linear_backoff/2 instead"
   def lin_backoff(initial_delay, factor) do
     Stream.unfold(initial_delay, fn last_delay ->
       next_d = last_delay * factor

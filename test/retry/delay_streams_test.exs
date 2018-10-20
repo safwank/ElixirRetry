@@ -24,17 +24,17 @@ defmodule Retry.DelayStreamsTest do
   end
 
   describe "exponential_backoff/1" do
-    test "returns exponentially increasing delays with default initial delay" do
+    test "returns exponentially increasing delays starting with default initial delay" do
       assert exponential_backoff() |> Enum.take(5) == [10, 20, 40, 80, 160]
     end
 
-    test "returns exponentially increasing delays with given initial delay" do
+    test "returns exponentially increasing delays starting with given initial delay" do
       assert exponential_backoff(100) |> Enum.take(5) == [100, 200, 400, 800, 1600]
     end
   end
 
   describe "lin_backoff/2" do
-    test "returns linear delays when factor is 1" do
+    test "returns constant delays when factor is 1" do
       lin_backoff(10, 1)
       |> Enum.take(5)
       |> Enum.scan(fn delay, last_delay ->
@@ -65,25 +65,21 @@ defmodule Retry.DelayStreamsTest do
 
   describe "constant_backoff/1" do
     test "returns constant delays with default delay" do
-      constant_backoff()
-      |> Enum.take(5)
-      |> Enum.each(fn delay ->
-        assert delay == 100
-      end)
+      assert constant_backoff()
+             |> Enum.take(5)
+             |> Enum.all?(&(&1 == 100))
     end
 
     test "returns constant delays with given initial delay" do
       initial_delay = 150
 
-      constant_backoff(initial_delay)
-      |> Enum.take(5)
-      |> Enum.each(fn delay ->
-        assert delay == 150
-      end)
+      assert constant_backoff(initial_delay)
+             |> Enum.take(5)
+             |> Enum.all?(&(&1 == 150))
     end
   end
 
-  describe "cap/1" do
+  describe "cap/2" do
     test "caps delay streams to a maximum" do
       assert exponential_backoff()
              |> cap(100)
@@ -92,7 +88,7 @@ defmodule Retry.DelayStreamsTest do
     end
   end
 
-  describe "expiry/1" do
+  describe "expiry/2" do
     test "limits lifetime" do
       {elapsed, _} =
         :timer.tc(fn ->
@@ -111,7 +107,7 @@ defmodule Retry.DelayStreamsTest do
     end
   end
 
-  describe "randomize/1" do
+  describe "randomize/2" do
     test "randomizes streams with default proportion" do
       delays =
         [50]
