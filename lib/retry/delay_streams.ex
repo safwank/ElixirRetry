@@ -17,7 +17,7 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  @deprecated "Use exponential_backoff/1 instead"
+  @deprecated "Use exponential_backoff/0 or exponential_backoff/1 instead"
   def exp_backoff(initial_delay \\ 10) do
     Stream.unfold(1, fn failures ->
       {:erlang.round(initial_delay * :math.pow(2, failures)), failures + 1}
