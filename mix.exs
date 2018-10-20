@@ -33,9 +33,9 @@ defmodule Retry.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.9", only: :test},
-      {:excoveralls, "~> 0.8", only: :test},
-      {:ex_doc, "~> 0.18", only: :dev},
+      {:credo, "~> 0.10", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
+      {:ex_doc, "~> 0.19", only: :dev},
       {:earmark, "~> 1.2", only: :dev}
     ]
   end
