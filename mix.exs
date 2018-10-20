@@ -21,7 +21,7 @@ defmodule Retry.Mixfile do
         commit: :test
       ],
       aliases: [
-        commit: ["credo --strict", "coveralls.html --trace"]
+        commit: ["dialyzer", "credo --strict", "coveralls.html --trace"]
       ],
       default_task: "commit"
     ]
@@ -35,6 +35,7 @@ defmodule Retry.Mixfile do
     [
       {:credo, "~> 0.10", only: :test},
       {:excoveralls, "~> 0.10", only: :test},
+      {:dialyxir, "~> 0.5", only: [:dev, :test]},
       {:ex_doc, "~> 0.19", only: :dev},
       {:earmark, "~> 1.2", only: :dev}
     ]
