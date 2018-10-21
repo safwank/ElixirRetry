@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.10"}]
+    [{:retry, "~> 0.11"}]
   end
 ```
 
@@ -40,10 +40,38 @@ The `after` block evaluates only when the `do` block returns a valid value befor
 
 On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout.
 
+#### Example -- constant backoff
+
+```elixir
+result = retry with: constant_backoff(100) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  error -> error
+end
+```
+
+This example retries every 100 milliseconds and gives up after 10 attempts.
+
+#### Example -- linear backoff
+
+```elixir
+result = retry with: linear_backoff(10, 2) |> cap(1_000) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  error -> error
+end
+```
+
+This example increases the delay linearly with each retry, starting with 10 milliseconds, caps the delay at 1 second and gives up after 10 attempts.
+
 #### Example -- exponential backoff
 
 ```elixir
-result = retry with: exp_backoff |> randomize |> expiry(10_000), rescue_only: [TimeoutError] do
+result = retry with: exponential_backoff() |> randomize |> expiry(10_000), rescue_only: [TimeoutError] do
   ExternalApi.do_something # fails if other system is down
 after
   result -> result
@@ -53,20 +81,6 @@ end
 ```
 
 This will try the block, and return the result, as soon as it succeeds. On a timeout error, this example will wait an exponentially increasing amount of time (`exp_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). Finally, it will stop retrying after 10 seconds have elapsed (`expiry/2`).
-
-#### Example -- linear backoff
-
-```elixir
-result = retry with: lin_backoff(10, 2) |> cap(1_000) |> Stream.take(10) do
-  ExternalApi.do_something # fails if other system is down
-after
-  result -> result
-else
-  error -> error
-end
-```
-
-This example doubles the delay with each retry, starting with 10 milliseconds, caps the delay at 1 second and gives up after 10 tries.
 
 #### Delay streams
 
@@ -93,7 +107,7 @@ This will retry failures forever, waiting 0.5 seconds between attempts.
 Similar to `retry(with: _, do: _)`, the `wait(delay_stream, do: _, after: _, else: _)` macro provides a way to wait for a block of code to be truthy with a variety of delay and give up behaviors. The execution of a block is considered a failure if it returns `false` or `nil`.
 
 ```elixir
-wait lin_backoff(100, 1) |> expiry(1_000) do
+wait constant_backoff(100) |> expiry(1_000) do
   we_there_yet?
 after
   _ ->

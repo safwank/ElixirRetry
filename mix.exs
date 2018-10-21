@@ -5,22 +5,23 @@ defmodule Retry.Mixfile do
     [
       app: :retry,
       name: "retry",
-      description: "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
-      version: "0.10.0",
+      description:
+        "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
+      version: "0.11.0",
       elixir: "~> 1.5",
       source_url: "https://github.com/safwank/ElixirRetry",
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "credo": :test,
+        credo: :test,
         "coveralls.html": :test,
-        "commit": :test
+        commit: :test
       ],
       aliases: [
-        "commit": ["credo --strict", "coveralls.html --trace"]
+        commit: ["dialyzer", "credo --strict", "coveralls.html --trace"]
       ],
       default_task: "commit"
     ]
@@ -32,9 +33,10 @@ defmodule Retry.Mixfile do
 
   defp deps do
     [
-      {:credo, "~> 0.9", only: :test},
-      {:excoveralls, "~> 0.8", only: :test},
-      {:ex_doc, "~> 0.18", only: :dev},
+      {:credo, "~> 0.10", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
+      {:dialyxir, "~> 0.5", only: [:dev, :test]},
+      {:ex_doc, "~> 0.19", only: :dev},
       {:earmark, "~> 1.2", only: :dev}
     ]
   end
