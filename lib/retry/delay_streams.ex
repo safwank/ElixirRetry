@@ -38,9 +38,8 @@ defmodule Retry.DelayStreams do
   """
   @spec exponential_backoff(pos_integer()) :: Enumerable.t()
   def exponential_backoff(initial_delay \\ 10) do
-    Stream.unfold(0, fn failures ->
-      next_d = :erlang.round(initial_delay * :math.pow(2, failures))
-      {next_d, failures + 1}
+    Stream.unfold(initial_delay, fn last_delay ->
+      {last_delay, last_delay * 2}
     end)
   end
 
