@@ -31,6 +31,13 @@ defmodule Retry.DelayStreamsTest do
     test "returns exponentially increasing delays starting with given initial delay" do
       assert exponential_backoff(100) |> Enum.take(5) == [100, 200, 400, 800, 1600]
     end
+
+    test "doesn't raise arithmetric error for large streams" do
+      assert exponential_backoff(100)
+             |> cap(30_000)
+             |> Enum.take(10_000)
+             |> Enum.count() == 10_000
+    end
   end
 
   describe "lin_backoff/2" do
