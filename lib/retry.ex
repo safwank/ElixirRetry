@@ -202,7 +202,7 @@ defmodule Retry do
     atoms = Keyword.get(opts, :atoms)
     exceptions = Keyword.get(opts, :rescue_only)
 
-    quote do
+    quote generated: true do
       fn ->
         try do
           case unquote(block) do
