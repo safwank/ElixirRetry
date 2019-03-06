@@ -45,6 +45,25 @@ defmodule Retry.DelayStreams do
 
   @doc """
 
+  Returns a stream in which each element of `delays` is randomly adjusted to a number
+  between 1 and the original delay.
+
+  Example
+
+      retry with: exponential_backoff() |> jitter() do
+        # ...
+      end
+
+  """
+  @spec jitter(Enumerable.t()) :: Enumerable.t()
+  def jitter(delays) do
+    Stream.map(delays, fn delay ->
+      :rand.uniform(trunc(delay))
+    end)
+  end
+
+  @doc """
+
   Returns a stream of delays that increase linearly.
 
   Example

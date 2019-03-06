@@ -40,6 +40,12 @@ defmodule Retry.DelayStreamsTest do
     end
   end
 
+  describe "jitter/1" do
+    test "returns delays with jitter" do
+      assert exponential_backoff(100) |> jitter() |> Enum.take(5) != [10, 20, 40, 80, 160]
+    end
+  end
+
   describe "lin_backoff/2" do
     test "returns constant delays when factor is 1" do
       lin_backoff(10, 1)
