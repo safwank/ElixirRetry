@@ -40,8 +40,8 @@ defmodule Retry.DelayStreamsTest do
     end
 
     test "when user set power index, it will return integer" do
-      assert exponential_backoff(31, 1.5) |> Enum.take(5) == [31,47,71,107,161]
-      assert exponential_backoff(1, 1.5) |> Enum.take(5) == [1,2,3,5,8]
+      assert exponential_backoff(31, 1.5) |> Enum.take(5) == [31, 47, 71, 107, 161]
+      assert exponential_backoff(1, 1.5) |> Enum.take(5) == [1, 2, 3, 5, 8]
     end
   end
 
