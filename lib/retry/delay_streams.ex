@@ -36,10 +36,10 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  @spec exponential_backoff(pos_integer()) :: Enumerable.t()
-  def exponential_backoff(initial_delay \\ 10) do
+  @spec exponential_backoff(pos_integer(), pos_integer()) :: Enumerable.t()
+  def exponential_backoff(initial_delay \\ 10, factor \\ 2) do
     Stream.unfold(initial_delay, fn last_delay ->
-      {last_delay, last_delay * 2}
+      {last_delay, round(last_delay * factor)}
     end)
   end
 

@@ -38,6 +38,11 @@ defmodule Retry.DelayStreamsTest do
              |> Enum.take(10_000)
              |> Enum.count() == 10_000
     end
+
+    test "when user set factor as param, it will return integer" do
+      assert exponential_backoff(31, 1.5) |> Enum.take(5) == [31, 47, 71, 107, 161]
+      assert exponential_backoff(1, 1.5) |> Enum.take(5) == [1, 2, 3, 5, 8]
+    end
   end
 
   describe "jitter/1" do
