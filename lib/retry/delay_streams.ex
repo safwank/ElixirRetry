@@ -58,7 +58,9 @@ defmodule Retry.DelayStreams do
   @spec jitter(Enumerable.t()) :: Enumerable.t()
   def jitter(delays) do
     Stream.map(delays, fn delay ->
-      :rand.uniform(trunc(delay))
+      delay
+      |> trunc
+      |> random_uniform
     end)
   end
 
@@ -136,7 +138,7 @@ defmodule Retry.DelayStreams do
   def randomize(delays, proportion \\ 0.1) do
     Stream.map(delays, fn d ->
       max_delta = round(d * proportion)
-      shift = :rand.uniform(2 * max_delta) - max_delta
+      shift = random_uniform(2 * max_delta) - max_delta
       d + shift
     end)
   end
@@ -209,4 +211,7 @@ defmodule Retry.DelayStreams do
       end
     end)
   end
+
+  defp random_uniform(n) when n <= 0, do: :rand.uniform(1)
+  defp random_uniform(n), do: :rand.uniform(n)
 end

@@ -156,4 +156,28 @@ defmodule Retry.DelayStreamsTest do
       assert Enum.any?(delays, &(abs(&1 - 50) > 50 * 0.1))
     end
   end
+
+  describe "randomization" do
+    test "expiry+randomize has a minimum expiry of 1ms" do
+      exponential_backoff()
+      |> expiry(1_000)
+      |> randomize()
+      |> Stream.map(fn d ->
+        :timer.sleep(500)
+        d
+      end)
+      |> Enum.take(50)
+    end
+
+    test "expiry+jitter has a minimum expiry of 1ms" do
+      exponential_backoff()
+      |> expiry(1_000)
+      |> jitter()
+      |> Stream.map(fn d ->
+        :timer.sleep(500)
+        d
+      end)
+      |> Enum.take(50)
+    end
+  end
 end
