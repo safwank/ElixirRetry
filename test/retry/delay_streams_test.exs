@@ -39,7 +39,7 @@ defmodule Retry.DelayStreamsTest do
              |> Enum.count() == 10_000
     end
 
-    test "when user set factor as param, it will return integer" do
+    test "allows the factor to be configurable" do
       assert exponential_backoff(31, 1.5) |> Enum.take(5) == [31, 47, 71, 107, 161]
       assert exponential_backoff(1, 1.5) |> Enum.take(5) == [1, 2, 3, 5, 8]
     end
@@ -48,6 +48,13 @@ defmodule Retry.DelayStreamsTest do
   describe "jitter/1" do
     test "returns delays with jitter" do
       assert exponential_backoff(100) |> jitter() |> Enum.take(5) != [10, 20, 40, 80, 160]
+    end
+
+    test "returns 0 when given 0 or less" do
+      assert [0, -1]
+             |> Stream.cycle()
+             |> jitter()
+             |> Enum.take(2) == [0, 0]
     end
   end
 
@@ -155,31 +162,12 @@ defmodule Retry.DelayStreamsTest do
 
       assert Enum.any?(delays, &(abs(&1 - 50) > 50 * 0.1))
     end
-  end
 
-  describe "randomization" do
-    test "expiry+randomize has a minimum expiry of 1ms" do
-      assert exponential_backoff()
-             |> expiry(100)
+    test "returns 0 when given 0 or less" do
+      assert [0, -1]
+             |> Stream.cycle()
              |> randomize()
-             |> Stream.map(fn d ->
-               :timer.sleep(50)
-               d
-             end)
-             |> Enum.take(50)
-             |> Enum.min() == 1
-    end
-
-    test "expiry+jitter has a minimum expiry of 1ms" do
-      assert exponential_backoff()
-             |> expiry(100)
-             |> jitter()
-             |> Stream.map(fn d ->
-               :timer.sleep(50)
-               d
-             end)
-             |> Enum.take(50)
-             |> Enum.min() == 1
+             |> Enum.take(2) == [0, 0]
     end
   end
 end
