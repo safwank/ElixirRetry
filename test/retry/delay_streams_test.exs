@@ -113,7 +113,7 @@ defmodule Retry.DelayStreamsTest do
     end
   end
 
-  describe "expiry/2" do
+  describe "expiry/3" do
     test "limits lifetime" do
       {elapsed, _} =
         :timer.tc(fn ->
@@ -129,6 +129,16 @@ defmodule Retry.DelayStreamsTest do
     test "doesn't mess up delays" do
       assert exponential_backoff() |> Enum.take(5) ==
                exponential_backoff() |> expiry(1_000) |> Enum.take(5)
+    end
+
+    test "sets a configurable minimum for the last delay" do
+      assert linear_backoff(20, 2)
+             |> expiry(100, 10)
+             |> Enum.map(fn delay ->
+               :timer.sleep(50)
+               delay
+             end)
+             |> Enum.min() >= 10
     end
   end
 

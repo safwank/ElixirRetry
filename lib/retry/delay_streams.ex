@@ -183,6 +183,9 @@ defmodule Retry.DelayStreams do
   the total time of execution may run over the `time_budget` depending on how
   long a single try will take.
 
+  Optionally, you can specify a minimum delay so the smallest value doesn't go
+  below the threshold.
+
   Example
 
       retry with: exponential_backoff() |> expiry(1_000) do
@@ -193,13 +196,13 @@ defmodule Retry.DelayStreams do
   creation.
 
   """
-  @spec expiry(Enumerable.t(), pos_integer()) :: Enumerable.t()
-  def expiry(delays, time_budget) do
+  @spec expiry(Enumerable.t(), pos_integer(), pos_integer()) :: Enumerable.t()
+  def expiry(delays, time_budget, min_delay \\ 100) do
     end_t = :os.system_time(:milli_seconds) + time_budget
 
     Stream.transform(delays, :normal, fn preferred_delay, status ->
       now_t = :os.system_time(:milli_seconds)
-      remaining_t = Enum.max([end_t - now_t, 0])
+      remaining_t = Enum.max([end_t - now_t, min_delay])
 
       cond do
         # time expired!
@@ -207,7 +210,7 @@ defmodule Retry.DelayStreams do
           {:halt, status}
 
         # one last try
-        preferred_delay > remaining_t ->
+        preferred_delay >= remaining_t or remaining_t == min_delay ->
           {[remaining_t], :at_end}
 
         true ->
