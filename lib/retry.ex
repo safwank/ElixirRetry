@@ -175,8 +175,7 @@ defmodule Retry do
         :timer.sleep(delay)
 
         case unquote(do_clause) do
-          false = result -> {:cont, result}
-          nil = result -> {:cont, result}
+          result when result in [false, nil] -> {:cont, result}
           result -> {:halt, result}
         end
       end)
