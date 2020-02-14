@@ -1,4 +1,18 @@
 defmodule Retry.Annotation do
+  @moduledoc """
+  A @retry annotation that will retry the function according to the retry settings
+  if the function returns an error tuple.
+
+  ```
+  use Retry.Annotation
+
+  @retry with constant_backoff(100) |> take(10)
+  def some_func(arg) do
+  ...code..
+  end
+  ```
+  """
+
   defmacro __using__(_opts) do
     quote do
       import Retry.DelayStreams
@@ -119,8 +133,11 @@ defmodule Retry.Annotation do
 
   defp de_underscore_name({:\\, context, [{name, name_context, name_args} | t]} = arg) do
     case to_string(name) do
-      "_" <> real_name -> {:\\, context, [{String.to_atom(real_name), name_context, name_args} | t]}
-      _ -> arg
+      "_" <> real_name ->
+        {:\\, context, [{String.to_atom(real_name), name_context, name_args} | t]}
+
+      _ ->
+        arg
     end
   end
 
