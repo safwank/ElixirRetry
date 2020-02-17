@@ -28,7 +28,7 @@ defmodule Retry.Annotation do
   end
 
   def on_def(env, kind, name, args, guards, _body) do
-    retry_opts = Module.get_attribute(env.module, :retry, :no_retry)
+    retry_opts = Module.get_attribute(env.module, :retry) || :no_retry
 
     unless retry_opts == :no_retry do
       Module.put_attribute(env.module, :retry_funs, %{
