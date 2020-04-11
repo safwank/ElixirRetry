@@ -4,12 +4,12 @@ defmodule Retry.Annotation do
 
   Examples
 
-    use Retry.Annotation
+      use Retry.Annotation
 
-    @retry with: constant_backoff(100) |> take(10)
-    def some_func(arg) do
-      # ...
-    end
+      @retry with: constant_backoff(100) |> Stream.take(10)
+      def some_func(arg) do
+        # ...
+      end
 
   """
 
