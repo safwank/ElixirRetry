@@ -136,17 +136,17 @@ defmodule Retry.AnnotationTest do
     end
 
     @retry with: constant_backoff(10) |> take(10)
-    def default_params_used(x, opts \\ []) do
+    def default_params_used(_x, opts \\ []) do
       {:ok, opts}
     end
 
     @retry with: constant_backoff(10) |> take(10)
-    def default_params_ignored(x, _opts \\ []) do
+    def default_params_ignored(_x, _opts \\ []) do
       {:ok, 0}
     end
 
     @retry with: constant_backoff(10) |> take(10)
-    def params_ignored(x, _opts) do
+    def params_ignored(_x, _opts) do
       {:ok, 0}
     end
   end

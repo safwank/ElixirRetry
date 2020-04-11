@@ -2,27 +2,6 @@ defmodule Retry.DelayStreamsTest do
   use ExUnit.Case, async: true
   import Retry.DelayStreams
 
-  describe "exp_backoff/1" do
-    test "returns exponentially increasing delays with default initial delay" do
-      exp_backoff()
-      |> Enum.take(5)
-      |> Enum.scan(fn delay, last_delay ->
-        assert delay == last_delay * 2
-        delay
-      end)
-    end
-
-    test "returns exponentially increasing delays with given initial delay" do
-      initial_delay = 100
-
-      exp_backoff(initial_delay)
-      |> Enum.take(1)
-      |> Enum.map(fn delay ->
-        assert delay == initial_delay * 2
-      end)
-    end
-  end
-
   describe "exponential_backoff/1" do
     test "returns exponentially increasing delays starting with default initial delay" do
       assert exponential_backoff() |> Enum.take(5) == [10, 20, 40, 80, 160]
@@ -55,26 +34,6 @@ defmodule Retry.DelayStreamsTest do
              |> Stream.cycle()
              |> jitter()
              |> Enum.take(2) == [0, 0]
-    end
-  end
-
-  describe "lin_backoff/2" do
-    test "returns constant delays when factor is 1" do
-      lin_backoff(10, 1)
-      |> Enum.take(5)
-      |> Enum.scan(fn delay, last_delay ->
-        assert last_delay == delay
-        delay
-      end)
-    end
-
-    test "returns exponentially increasing delays when factor is more than 1 (backwards compatibility)" do
-      lin_backoff(10, 1.5)
-      |> Enum.take(5)
-      |> Enum.scan(fn delay, last_delay ->
-        assert last_delay * 1.5 == delay
-        delay
-      end)
     end
   end
 

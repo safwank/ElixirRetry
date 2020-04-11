@@ -12,25 +12,6 @@ defmodule Retry.DelayStreams do
 
   Example
 
-      retry with: exp_backoff do
-        # ...
-      end
-
-  """
-  @deprecated "Use exponential_backoff/0 or exponential_backoff/1 instead"
-  @spec exp_backoff(pos_integer()) :: Enumerable.t()
-  def exp_backoff(initial_delay \\ 10) do
-    Stream.unfold(1, fn failures ->
-      {:erlang.round(initial_delay * :math.pow(2, failures)), failures + 1}
-    end)
-  end
-
-  @doc """
-
-  Returns a stream of delays that increase exponentially.
-
-  Example
-
       retry with: exponential_backoff do
         # ...
       end
@@ -61,26 +42,6 @@ defmodule Retry.DelayStreams do
       delay
       |> trunc
       |> random_uniform
-    end)
-  end
-
-  @doc """
-
-  Returns a stream of delays that increase linearly.
-
-  Example
-
-      retry with: lin_backoff(@fibonacci) do
-        # ...
-      end
-
-  """
-  @deprecated "Use linear_backoff/2 instead"
-  @spec lin_backoff(pos_integer(), pos_integer()) :: Enumerable.t()
-  def lin_backoff(initial_delay, factor) do
-    Stream.unfold(initial_delay, fn last_delay ->
-      next_d = last_delay * factor
-      {next_d, next_d}
     end)
   end
 
