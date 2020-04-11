@@ -16,7 +16,6 @@ defmodule Retry.Annotation do
   defmacro __using__(_opts) do
     quote do
       import Retry.DelayStreams
-      import Stream, only: [take: 2]
       require Retry
       require Logger
 

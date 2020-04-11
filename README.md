@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.13"}]
+    [{:retry, "~> 0.14"}]
   end
 ```
 
@@ -81,6 +81,19 @@ end
 ```
 
 This will try the block, and return the result, as soon as it succeeds. On a timeout error, this example will wait an exponentially increasing amount of time (`exponential_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). Finally, it will stop retrying after 10 seconds have elapsed (`expiry/2`).
+
+#### Example -- retry annotation
+
+```elixir
+use Retry.Annotation
+
+@retry with constant_backoff(100) |> Stream.take(10)
+def some_func(arg) do
+  ExternalApi.do_something # fails if other system is down
+end
+```
+
+This example shows how you can annotate a function to retry every 100 milliseconds and gives up after 10 attempts.
 
 #### Delay streams
 

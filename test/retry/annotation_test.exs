@@ -1,6 +1,8 @@
 defmodule Retry.AnnotationTest do
   use ExUnit.Case
 
+  import Stream
+
   defmodule(CustomError, do: defexception(message: "custom error!"))
 
   defmodule Example do
