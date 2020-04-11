@@ -1,16 +1,16 @@
 defmodule Retry.Annotation do
   @moduledoc """
-  A @retry annotation that will retry the function according to the retry settings
-  if the function returns an error tuple.
+  A @retry annotation that will retry the function according to the retry settings.
 
-  ```
-  use Retry.Annotation
+  Examples
 
-  @retry with constant_backoff(100) |> take(10)
-  def some_func(arg) do
-  ...code..
-  end
-  ```
+    use Retry.Annotation
+
+    @retry with constant_backoff(100) |> take(10)
+    def some_func(arg) do
+      # ...
+    end
+
   """
 
   defmacro __using__(_opts) do
@@ -22,12 +22,12 @@ defmodule Retry.Annotation do
 
       Module.register_attribute(__MODULE__, :retry_funs, accumulate: true)
 
-      @on_definition {Retry.Annotation, :on_def}
+      @on_definition {Retry.Annotation, :on_definition}
       @before_compile {Retry.Annotation, :before_compile}
     end
   end
 
-  def on_def(env, kind, name, args, guards, _body) do
+  def on_definition(env, kind, name, args, guards, _body) do
     retry_opts = Module.get_attribute(env.module, :retry) || :no_retry
 
     unless retry_opts == :no_retry do
@@ -48,7 +48,8 @@ defmodule Retry.Annotation do
     Module.delete_attribute(env.module, :retry_funs)
 
     override_list =
-      Enum.map(retry_funs, &gen_override_list/1)
+      retry_funs
+      |> Enum.map(&gen_override_list/1)
       |> List.flatten()
 
     overrides =
@@ -115,18 +116,12 @@ defmodule Retry.Annotation do
       end)
 
     quote location: :keep do
-      Retry.retry_while unquote(fun.retry_opts) do
-        case super(unquote_splicing(args)) do
-          {:error, reason} = error ->
-            Logger.info(fn ->
-              "#{__MODULE__}: Retrying function #{unquote(fun.name)}: #{inspect(reason)}"
-            end)
-
-            {:cont, error}
-
-          result ->
-            {:halt, result}
-        end
+      Retry.retry unquote(fun.retry_opts) do
+        super(unquote_splicing(args))
+      after
+        result -> result
+      else
+        error -> error
       end
     end
   end
