@@ -87,7 +87,7 @@ This will try the block, and return the result, as soon as it succeeds. On a tim
 ```elixir
 use Retry.Annotation
 
-@retry with constant_backoff(100) |> Stream.take(10)
+@retry with: constant_backoff(100) |> Stream.take(10)
 def some_func(arg) do
   ExternalApi.do_something # fails if other system is down
 end

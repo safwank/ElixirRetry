@@ -6,7 +6,7 @@ defmodule Retry.Annotation do
 
     use Retry.Annotation
 
-    @retry with constant_backoff(100) |> take(10)
+    @retry with: constant_backoff(100) |> take(10)
     def some_func(arg) do
       # ...
     end
