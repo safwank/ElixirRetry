@@ -224,7 +224,7 @@ defmodule Retry do
             if e.__struct__ in unquote(exceptions) do
               {:cont, {:exception, e}}
             else
-              reraise e, System.stacktrace()
+              reraise e, __STACKTRACE__
             end
         end
       end
