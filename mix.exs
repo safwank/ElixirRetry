@@ -36,7 +36,7 @@ defmodule Retry.Mixfile do
       {:credo, "~> 1.4.0", only: :test},
       {:excoveralls, "~> 0.13.0", only: :test},
       {:dialyxir, "~> 1.0.0", only: [:dev, :test]},
-      {:ex_doc, "~> 0.23.0", only: :dev},
+      {:ex_doc, "~> 0.21.0", only: :dev},
       {:earmark, "~> 1.4.0", only: :dev}
     ]
   end
