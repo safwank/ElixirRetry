@@ -1,8 +1,7 @@
 defmodule Retry.Annotation do
   @moduledoc """
-  A @retry annotation that will retry the function according to the retry settings.
-
-  Examples
+  A `@retry` annotation that will retry the function according to the retry
+  settings.
 
       use Retry.Annotation
 

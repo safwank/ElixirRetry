@@ -1,16 +1,13 @@
 defmodule Retry.DelayStreams do
   @moduledoc """
-
   This module provide a set of helper functions that produce delay streams for
   use with `retry`.
-
   """
 
   @doc """
-
   Returns a stream of delays that increase exponentially.
 
-  Example
+  ## Example
 
       retry with: exponential_backoff do
         # ...
@@ -25,11 +22,10 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a stream in which each element of `delays` is randomly adjusted to a number
   between 1 and the original delay.
 
-  Example
+  ## Example
 
       retry with: exponential_backoff() |> jitter() do
         # ...
@@ -46,10 +42,9 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a stream of delays that increase linearly.
 
-  Example
+  ## Example
 
       retry with: linear_backoff(50, 2) do
         # ...
@@ -65,10 +60,9 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a constant stream of delays.
 
-  Example
+  ## Example
 
       retry with: constant_backoff(50) do
         # ...
@@ -81,18 +75,17 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a stream in which each element of `delays` is randomly adjusted no
   more than `proportion` of the delay.
 
-  Example
+  ## Example
 
       retry with: exponential_backoff() |> randomize do
         # ...
       end
 
   Produces an exponentially increasing delay stream where each delay is randomly
-  adjusted to be within 10 percent of the original value
+  adjusted to be within 10 percent of the original value.
 
   """
   @spec randomize(Enumerable.t(), float()) :: Enumerable.t()
@@ -109,11 +102,10 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a stream that is the same as `delays` except that the delays never
   exceed `max`. This allow capping the delay between attempts to some max value.
 
-  Example
+  ## Example
 
       retry with: exponential_backoff() |> cap(10_000) do
         # ...
@@ -135,7 +127,6 @@ defmodule Retry.DelayStreams do
   end
 
   @doc """
-
   Returns a delay stream that is the same as `delays` except it limits the total
   life span of the stream to `time_budget`. This calculation takes the execution
   time of the block being retried into account.
@@ -147,7 +138,7 @@ defmodule Retry.DelayStreams do
   Optionally, you can specify a minimum delay so the smallest value doesn't go
   below the threshold.
 
-  Example
+  ## Example
 
       retry with: exponential_backoff() |> expiry(1_000) do
         # ...

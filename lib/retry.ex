@@ -1,10 +1,11 @@
 defmodule Retry do
   @moduledoc """
+  Provides a convenient interface for retrying behavior.
 
-  Provides a convenient interface to retrying behavior. All durations are
-  specified in milliseconds.
+  All durations are specified in milliseconds.
 
-  Examples
+  The first retry will exponentially increase the delay, fudging each delay up
+  to 10%, until the delay reaches 1 second and then give up after 10 seconds.
 
       use Retry
       import Stream
@@ -13,22 +14,26 @@ defmodule Retry do
       # interact with external service
       end
 
+  The second retry will linearly increase the retry by a factor of 2 from 10ms
+  giving up after 10 attempts.
+
+      use Retry
+      import Stream
+
       retry with: linear_backoff(10, 2) |> cap(1_000) |> take(10) do
       # interact with external service
       end
 
-      retry with: cycle([500]) |> take(10) do
-      # interact with external service
-      end
-
-  The first retry will exponentially increase the delay, fudging each delay up
-  to 10%, until the delay reaches 1 second and then give up after 10 seconds.
-
-  The second retry will linearly increase the retry by a factor of 2 from 10ms giving up after 10 attempts.
-
   The third example shows how we can produce a delay stream using standard
   `Stream` functionality. Any stream of integers may be used as the value of
   `with:`.
+
+      use Retry
+      import Stream
+
+      retry with: cycle([500]) |> take(10) do
+      # interact with external service
+      end
 
   """
 
@@ -43,7 +48,6 @@ defmodule Retry do
   end
 
   @doc """
-
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
@@ -51,15 +55,16 @@ defmodule Retry do
   Other atoms or atom-result tuples will not be retried. If `atoms` is not specified,
   it defaults to `[:error]`.
 
-  Similary, if the block raises any of the exceptions specified in `rescue_only`, a retry
+  Similarly, if the block raises any of the exceptions specified in `rescue_only`, a retry
   will be attempted. Other exceptions will not be retried. If `rescue_only` is
   not specified, it defaults to `[RuntimeError]`.
 
   The `after` block evaluates only when the `do` block returns a valid value before timeout.
 
-  On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout.
+  On the other hand, the `else` block evaluates only when the `do` block remains erroneous
+  after timeout.
 
-  Example
+  ## Example
 
       use Retry
 
@@ -118,14 +123,13 @@ defmodule Retry do
   end
 
   @doc """
-
   Retry a block of code until `halt` is emitted delaying between each attempt
   the duration specified by the next item in the `with` delay stream.
 
   The return value for `block` is expected to be `{:cont, result}`, return
   `{:halt, result}` to end the retry early.
 
-  Example
+  ## Example
 
       retry_while with: linear_backoff(500, 1) |> take(5) do
         call_service
@@ -147,15 +151,15 @@ defmodule Retry do
   end
 
   @doc """
-
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the delay stream.
 
   The `after` block evaluates only when the `do` block returns a truthy value.
 
-  On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
+  On the other hand, the `else` block evaluates only when the `do` block remains
+  falsy after timeout.
 
-  Example
+  ## Example
 
       wait linear_backoff(500, 1) |> take(5) do
         we_there_yet?

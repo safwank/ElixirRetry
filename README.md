@@ -1,25 +1,24 @@
-[![Build Status](https://travis-ci.org/safwank/ElixirRetry.svg?branch=master)](https://travis-ci.org/safwank/ElixirRetry)
-
 # ElixirRetry
+
+[![Build Status](https://travis-ci.org/safwank/ElixirRetry.svg?branch=master)](https://travis-ci.org/safwank/ElixirRetry)
+[![Module Version](https://img.shields.io/hexpm/v/retry.svg)](https://hex.pm/packages/retry)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/retry/)
+[![Total Download](https://img.shields.io/hexpm/dt/retry.svg)](https://hex.pm/packages/retry)
+[![License](https://img.shields.io/hexpm/l/retry.svg)](https://github.com/safwank/ElixirRetry/blob/master/LICENSE)
+[![Last Updated](https://img.shields.io/github/last-commit/safwank/ElixirRetry.svg)](https://github.com/safwank/ElixirRetry/commits/master)
 
 Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.
 
 ## Installation
 
-Add `retry` to your list of dependencies in `mix.exs`:
+Add `:retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
-  def deps do
-    [{:retry, "~> 0.14"}]
-  end
-```
-
-Ensure `retry` is started before your application:
-
-```elixir
-  def application do
-    [applications: [:retry]]
-  end
+def deps do
+  [
+    {:retry, "~> 0.14"}
+  ]
+end
 ```
 
 ## Documentation
@@ -107,7 +106,7 @@ result = retry with: Stream.cycle([500]) do
 after
   result -> result
 else
-  error -> error  
+  error -> error
 end
 ```
 
@@ -138,3 +137,17 @@ The `after` block evaluates only when the `do` block returns a truthy value.
 On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
 
 Pretty nifty for those pesky asynchronous tests and building more reliable systems in general!
+
+## License
+
+Copyright (c) 2014 Safwan Kamarrudin
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
