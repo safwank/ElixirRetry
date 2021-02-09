@@ -37,6 +37,7 @@ defmodule Retry do
   @doc false
   defmacro __using__(_opts) do
     quote do
+      require Retry
       import Retry
       import Retry.DelayStreams
     end
