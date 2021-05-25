@@ -81,7 +81,7 @@ defmodule Retry do
     opts = Keyword.merge(@default_retry_options, opts)
     atoms = Keyword.get(opts, :atoms)
 
-    quote do
+    quote generated: true do
       fun = unquote(block_runner(do_clause, opts))
 
       unquote(delays_from(stream_builder))
