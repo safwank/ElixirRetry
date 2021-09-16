@@ -148,6 +148,44 @@ defmodule Retry do
 
   @doc """
 
+  Same as `retry_while/2` but allows to pass the accumulator through.
+
+  The accumulator is initially given as a tuple `{name, initial_value}`
+  and is passed through `:cont` steps bypassing macro hygiene so it becomes
+  available within the block.
+
+  It might be handy if subsequent retries are dependent on the previous
+  outcome.
+
+  Example
+
+      retry_while {:acc, 0}, with: linear_backoff(500, 1) |> take(5) do
+        IO.inspect(acc, label: "acc")
+
+        call_service
+        |> case do
+          %{"errors" => true} -> {:cont, acc + 1}
+          result -> {:halt, result}
+        end
+      end
+
+  """
+  defmacro retry_while({acc_name, acc_initial}, [with: stream_builder], do: block) do
+    acc = Macro.var(acc_name, __CALLER__.module)
+
+    quote do
+      var!(unquote(acc)) = unquote(acc_initial)
+
+      unquote(delays_from(stream_builder))
+      |> Enum.reduce_while(unquote(acc_initial), fn delay, var!(unquote(acc)) ->
+        :timer.sleep(delay)
+        unquote(block)
+      end)
+    end
+  end
+
+  @doc """
+
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the delay stream.
 

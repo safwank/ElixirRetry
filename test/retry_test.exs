@@ -201,6 +201,15 @@ defmodule RetryTest do
 
       assert result == "Everything's so awesome!"
     end
+
+    test "allows an accumulator to be passed through" do
+      result =
+        retry_while {:count, 0}, with: linear_backoff(50, 1) |> take(5) do
+          {:cont, count + 1}
+        end
+
+      assert result == 6
+    end
   end
 
   describe "wait" do
