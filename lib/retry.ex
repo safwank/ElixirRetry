@@ -171,21 +171,19 @@ defmodule Retry do
     end
   end
 
-  defmacro retry_while([with: stream_builder, acc: acc_initial], do: block),
-    do: do_retry_value([acc: acc_initial, with: stream_builder], do: block)
+  defmacro retry_while(args = [with: _stream_builder, acc: _acc_initial], do: block),
+    do: do_retry_value(Enum.reverse(args), do: block)
 
-  defmacro retry_while([acc: acc_initial, with: stream_builder], do: block),
-    do: do_retry_value([acc: acc_initial, with: stream_builder], do: block)
+  defmacro retry_while(args = [acc: _acc_initial, with: _stream_builder], do: block),
+    do: do_retry_value(args, do: block)
 
   defp do_retry_value([acc: acc_initial, with: stream_builder], do: block) do
     quote do
-      var!(acc) = unquote(acc_initial)
-
       unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(var!(acc), fn delay, var!(acc) ->
+      |> Enum.reduce_while(unquote(acc_initial), fn delay, acc ->
         :timer.sleep(delay)
 
-        case var!(acc) do
+        case acc do
           unquote(block)
         end
       end)
