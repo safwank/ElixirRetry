@@ -125,6 +125,19 @@ defmodule Retry do
   The return value for `block` is expected to be `{:cont, result}`, return
   `{:halt, result}` to end the retry early.
 
+  One also might provide the accumulator to pass through, what might be handy
+  if subsequent retries are dependent on the previous ones.
+
+  The initial value of the accumulator is given as a keyword argument `acc:`.
+  When the `:acc` key is given, its value is used as the initial accumulator
+  and the `do` block must be changed to use `->` clauses, where the left side
+  of `->` receives the accumulated value of the previous iteration and
+  the expression on the right side must return the `:cont`/`:halt` tuple
+  with new accumulator value as the second element.
+
+  Once `:halt` is returned from the block, or there are no more elements,
+  the accumulated value is returned.
+
   Example
 
       retry_while with: linear_backoff(500, 1) |> take(5) do
@@ -135,6 +148,18 @@ defmodule Retry do
         end
       end
 
+  Example with `acc:`
+
+      retry_while acc: 0, with: linear_backoff(500, 1) |> take(5) do
+        acc ->
+          IO.inspect(acc, label: "acc")
+
+          call_service
+          |> case do
+            %{"errors" => true} -> {:cont, acc + 1}
+            result -> {:halt, result}
+          end
+      end
   """
   defmacro retry_while([with: stream_builder], do: block) do
     quote do
@@ -146,40 +171,23 @@ defmodule Retry do
     end
   end
 
-  @doc """
+  defmacro retry_while([with: stream_builder, acc: acc_initial], do: block),
+    do: do_retry_value([acc: acc_initial, with: stream_builder], do: block)
 
-  Same as `retry_while/2` but allows to pass the accumulator through.
+  defmacro retry_while([acc: acc_initial, with: stream_builder], do: block),
+    do: do_retry_value([acc: acc_initial, with: stream_builder], do: block)
 
-  The accumulator is initially given as a tuple `{name, initial_value}`
-  and is passed through `:cont` steps bypassing macro hygiene so it becomes
-  available within the block.
-
-  It might be handy if subsequent retries are dependent on the previous
-  outcome.
-
-  Example
-
-      retry_while {:acc, 0}, with: linear_backoff(500, 1) |> take(5) do
-        IO.inspect(acc, label: "acc")
-
-        call_service
-        |> case do
-          %{"errors" => true} -> {:cont, acc + 1}
-          result -> {:halt, result}
-        end
-      end
-
-  """
-  defmacro retry_while({acc_name, acc_initial}, [with: stream_builder], do: block) do
-    acc = Macro.var(acc_name, __CALLER__.module)
-
+  defp do_retry_value([acc: acc_initial, with: stream_builder], do: block) do
     quote do
-      var!(unquote(acc)) = unquote(acc_initial)
+      var!(acc) = unquote(acc_initial)
 
       unquote(delays_from(stream_builder))
-      |> Enum.reduce_while(unquote(acc_initial), fn delay, var!(unquote(acc)) ->
+      |> Enum.reduce_while(var!(acc), fn delay, var!(acc) ->
         :timer.sleep(delay)
-        unquote(block)
+
+        case var!(acc) do
+          unquote(block)
+        end
       end)
     end
   end
