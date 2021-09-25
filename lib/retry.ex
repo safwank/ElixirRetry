@@ -125,8 +125,8 @@ defmodule Retry do
   The return value for `block` is expected to be `{:cont, result}`, return
   `{:halt, result}` to end the retry early.
 
-  One also might provide the accumulator to pass through, what might be handy
-  if subsequent retries are dependent on the previous ones.
+  An accumulator can also be specified which might be handy if subsequent
+  retries are dependent on the previous ones.
 
   The initial value of the accumulator is given as a keyword argument `acc:`.
   When the `:acc` key is given, its value is used as the initial accumulator
@@ -152,8 +152,6 @@ defmodule Retry do
 
       retry_while acc: 0, with: linear_backoff(500, 1) |> take(5) do
         acc ->
-          IO.inspect(acc, label: "acc")
-
           call_service
           |> case do
             %{"errors" => true} -> {:cont, acc + 1}
