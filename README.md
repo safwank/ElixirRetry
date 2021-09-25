@@ -1,4 +1,4 @@
-![Build Status](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml/badge.svg)
+[![Build Status](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml/badge.svg)](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml)
 
 # ElixirRetry
 
