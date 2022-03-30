@@ -159,25 +159,31 @@ defmodule Retry.DelayStreams do
   """
   @spec expiry(Enumerable.t(), pos_integer(), pos_integer()) :: Enumerable.t()
   def expiry(delays, time_budget, min_delay \\ 100) do
-    end_t = :os.system_time(:milli_seconds) + time_budget
+    Stream.resource(
+      fn -> {delays, :os.system_time(:milli_seconds) + time_budget} end,
+      fn
+        :at_end ->
+          {:halt, :at_end}
 
-    Stream.transform(delays, :normal, fn preferred_delay, status ->
-      now_t = :os.system_time(:milli_seconds)
-      remaining_t = Enum.max([end_t - now_t, min_delay])
+        {remaining_delays, end_t} ->
+          with [preferred_delay] <- Enum.take(remaining_delays, 1) do
+            now_t = :os.system_time(:milli_seconds)
+            remaining_t = Enum.max([end_t - now_t, min_delay])
 
-      cond do
-        # time expired!
-        :at_end == status ->
-          {:halt, status}
-
-        # one last try
-        preferred_delay >= remaining_t or remaining_t == min_delay ->
-          {[remaining_t], :at_end}
-
-        true ->
-          {[preferred_delay], status}
-      end
-    end)
+            if preferred_delay >= remaining_t or remaining_t == min_delay do
+              # one last try before time budget is exceeded
+              {[remaining_t], :at_end}
+            else
+              # default
+              {[preferred_delay], {Stream.drop(remaining_delays, 1), end_t}}
+            end
+          else
+            # reached end of stream - no more tries
+            _ -> {:halt, :at_end}
+          end
+      end,
+      fn _ -> :noop end
+    )
   end
 
   defp random_uniform(n) when n <= 0, do: 0

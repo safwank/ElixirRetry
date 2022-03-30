@@ -99,6 +99,24 @@ defmodule Retry.DelayStreamsTest do
              end)
              |> Enum.min() >= 10
     end
+
+    test "stops before the expiry is reached, if there are no elements left in the delay stream" do
+      assert exponential_backoff() |> Stream.take(5) |> expiry(1_000) |> Enum.count() == 5
+    end
+
+    test "evaluates expiry at runtime of the stream, rather than execution time of expiry/3" do
+      delay_stream =
+        [50]
+        |> Stream.cycle()
+        |> expiry(75, 50)
+
+      assert Enum.count(delay_stream, fn delay -> :timer.sleep(delay) end) == 2
+
+      # If the expiry time is determined when `expiry/3` is executed, we will
+      # already be past it (due to all the sleeps performed previously) and jump
+      # out after the first run.
+      assert Enum.count(delay_stream, fn delay -> :timer.sleep(delay) end) == 2
+    end
   end
 
   describe "randomize/2" do
