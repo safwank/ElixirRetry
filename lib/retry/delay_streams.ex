@@ -162,28 +162,31 @@ defmodule Retry.DelayStreams do
     Stream.resource(
       fn -> {delays, :os.system_time(:milli_seconds) + time_budget} end,
       fn
-        :at_end ->
-          {:halt, :at_end}
-
-        {remaining_delays, end_t} ->
-          with [preferred_delay] <- Enum.take(remaining_delays, 1) do
-            now_t = :os.system_time(:milli_seconds)
-            remaining_t = Enum.max([end_t - now_t, min_delay])
-
-            if preferred_delay >= remaining_t or remaining_t == min_delay do
-              # one last try before time budget is exceeded
-              {[remaining_t], :at_end}
-            else
-              # default
-              {[preferred_delay], {Stream.drop(remaining_delays, 1), end_t}}
-            end
-          else
-            # reached end of stream - no more tries
-            _ -> {:halt, :at_end}
-          end
+        :at_end -> {:halt, :at_end}
+        {remaining_delays, end_t} -> reduce_delays(remaining_delays, end_t, min_delay)
       end,
       fn _ -> :noop end
     )
+  end
+
+  defp reduce_delays(remaining_delays, end_t, min_delay) do
+    case Enum.take(remaining_delays, 1) do
+      [preferred_delay] ->
+        now_t = :os.system_time(:milli_seconds)
+        remaining_t = Enum.max([end_t - now_t, min_delay])
+
+        if preferred_delay >= remaining_t or remaining_t == min_delay do
+          # one last try before time budget is exceeded
+          {[remaining_t], :at_end}
+        else
+          # default
+          {[preferred_delay], {Stream.drop(remaining_delays, 1), end_t}}
+        end
+
+      _ ->
+        # reached end of stream - no more tries
+        {:halt, :at_end}
+    end
   end
 
   defp random_uniform(n) when n <= 0, do: 0
