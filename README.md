@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml/badge.svg)](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml)
+[![Build Status](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml/badge.svg)](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml) [![hex.pm](https://img.shields.io/hexpm/v/retry)](https://hex.pm/packages/retry)
 
 # ElixirRetry
 
@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.15"}]
+    [{:retry, "~> 0.16"}]
   end
 ```
 
