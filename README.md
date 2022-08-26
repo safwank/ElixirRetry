@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/safwank/ElixirRetry.svg?branch=master)](https://travis-ci.org/safwank/ElixirRetry)
+[![Build Status](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml/badge.svg)](https://github.com/safwank/ElixirRetry/actions/workflows/main.yml)
 
 # ElixirRetry
 
@@ -10,7 +10,7 @@ Add `retry` to your list of dependencies in `mix.exs`:
 
 ```elixir
   def deps do
-    [{:retry, "~> 0.14"}]
+    [{:retry, "~> 0.15"}]
   end
 ```
 

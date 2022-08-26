@@ -125,6 +125,19 @@ defmodule Retry do
   The return value for `block` is expected to be `{:cont, result}`, return
   `{:halt, result}` to end the retry early.
 
+  An accumulator can also be specified which might be handy if subsequent
+  retries are dependent on the previous ones.
+
+  The initial value of the accumulator is given as a keyword argument `acc:`.
+  When the `:acc` key is given, its value is used as the initial accumulator
+  and the `do` block must be changed to use `->` clauses, where the left side
+  of `->` receives the accumulated value of the previous iteration and
+  the expression on the right side must return the `:cont`/`:halt` tuple
+  with new accumulator value as the second element.
+
+  Once `:halt` is returned from the block, or there are no more elements,
+  the accumulated value is returned.
+
   Example
 
       retry_while with: linear_backoff(500, 1) |> take(5) do
@@ -135,6 +148,16 @@ defmodule Retry do
         end
       end
 
+  Example with `acc:`
+
+      retry_while acc: 0, with: linear_backoff(500, 1) |> take(5) do
+        acc ->
+          call_service
+          |> case do
+            %{"errors" => true} -> {:cont, acc + 1}
+            result -> {:halt, result}
+          end
+      end
   """
   defmacro retry_while([with: stream_builder], do: block) do
     quote do
@@ -142,6 +165,25 @@ defmodule Retry do
       |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
         unquote(block)
+      end)
+    end
+  end
+
+  defmacro retry_while(args = [with: _stream_builder, acc: _acc_initial], do: block),
+    do: do_retry_value(Enum.reverse(args), do: block)
+
+  defmacro retry_while(args = [acc: _acc_initial, with: _stream_builder], do: block),
+    do: do_retry_value(args, do: block)
+
+  defp do_retry_value([acc: acc_initial, with: stream_builder], do: block) do
+    quote do
+      unquote(delays_from(stream_builder))
+      |> Enum.reduce_while(unquote(acc_initial), fn delay, acc ->
+        :timer.sleep(delay)
+
+        case acc do
+          unquote(block)
+        end
       end)
     end
   end

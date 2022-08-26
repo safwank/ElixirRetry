@@ -201,6 +201,46 @@ defmodule RetryTest do
 
       assert result == "Everything's so awesome!"
     end
+
+    test "allows an accumulator to be passed through" do
+      result =
+        retry_while acc: 0, with: linear_backoff(50, 1) |> take(5) do
+          acc -> {:cont, acc + 1}
+        end
+
+      assert result == 6
+    end
+
+    test "accepts any order of parameters" do
+      result =
+        retry_while with: linear_backoff(50, 1) |> take(5), acc: 0 do
+          acc -> {:cont, acc + 1}
+        end
+
+      assert result == 6
+    end
+
+    test "pattern-match in accumulator works" do
+      result =
+        retry_while acc: 0, with: linear_backoff(50, 1) |> take(5) do
+          3 -> {:halt, :ok}
+          acc -> {:cont, acc + 1}
+        end
+
+      assert result == :ok
+    end
+
+    test "responds with a meaningful error when clauses are not given" do
+      assert_raise CompileError, ~r/expected -> clauses for :do in "case"$/, fn ->
+        defmodule BadRetryWhileSyntax do
+          def retry_while do
+            retry_while with: linear_backoff(50, 1) |> take(5), acc: 0 do
+              {:cont, acc + 1}
+            end
+          end
+        end
+      end
+    end
   end
 
   describe "wait" do

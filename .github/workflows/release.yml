@@ -1,0 +1,46 @@
+name: Release workflow
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    name: Publish package to hex.pm
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        elixir: ["1.13"]
+        otp: ["24"]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Elixir
+        uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.mix
+            _build
+            deps
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+
+      - name: Install and compile dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+
+      - name: Publish
+        run: |
+          mix hex.build
+          mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
