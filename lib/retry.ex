@@ -160,7 +160,7 @@ defmodule Retry do
       end
   """
   defmacro retry_while([with: stream_builder], do: block) do
-    quote do
+    quote generated: true do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
@@ -176,7 +176,7 @@ defmodule Retry do
     do: do_retry_value(args, do: block)
 
   defp do_retry_value([acc: acc_initial, with: stream_builder], do: block) do
-    quote do
+    quote generated: true do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(unquote(acc_initial), fn delay, acc ->
         :timer.sleep(delay)
@@ -211,7 +211,7 @@ defmodule Retry do
 
   """
   defmacro wait(stream_builder, do: do_clause, after: after_clause, else: else_clause) do
-    quote do
+    quote generated: true do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
         :timer.sleep(delay)
@@ -274,7 +274,7 @@ defmodule Retry do
   end
 
   defp delays_from(stream_builder) do
-    quote do
+    quote generated: true do
       delays = unquote(stream_builder)
       [0] |> Stream.concat(delays)
     end
