@@ -7,7 +7,7 @@ defmodule Retry.Mixfile do
       name: "retry",
       description:
         "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
-      version: "0.16.0",
+      version: "0.17.0",
       elixir: "~> 1.11",
       source_url: "https://github.com/safwank/ElixirRetry",
       build_embedded: Mix.env() == :prod,
