@@ -36,8 +36,12 @@ defmodule Retry do
   @required_retry_options [:with]
   @allowed_retry_options @required_retry_options ++ Keyword.keys(@default_retry_options)
 
-  @default_retry_else_clause (quote do error -> raise error end)
-  @default_retry_after_clause (quote do result -> result end)
+  @default_retry_else_clause (quote do
+                                error -> raise error
+                              end)
+  @default_retry_after_clause (quote do
+                                 result -> result
+                               end)
   @default_retry_clauses [after: @default_retry_after_clause, else: @default_retry_else_clause]
   @required_retry_clauses [:do]
   @allowed_retry_clauses @required_retry_clauses ++ Keyword.keys(@default_retry_clauses)
