@@ -33,6 +33,22 @@ defmodule Retry do
   """
 
   @default_retry_options [atoms: [:error], rescue_only: [RuntimeError]]
+  @required_retry_options [:with]
+  @allowed_retry_options @required_retry_options ++ Keyword.keys(@default_retry_options)
+
+  @default_retry_else_clause (quote do error -> raise error end)
+  @default_retry_after_clause (quote do result -> result end)
+  @default_retry_clauses [after: @default_retry_after_clause, else: @default_retry_else_clause]
+  @required_retry_clauses [:do]
+  @allowed_retry_clauses @required_retry_clauses ++ Keyword.keys(@default_retry_clauses)
+
+  @retry_usage """
+  Invalid Syntax. Usage:
+
+  retry with: ... do
+    ...
+  end
+  """
 
   @doc false
   defmacro __using__(_opts) do
@@ -72,14 +88,11 @@ defmodule Retry do
       end
 
   """
-  defmacro retry(
-             [{:with, stream_builder} | opts],
-             do: do_clause,
-             after: after_clause,
-             else: else_clause
-           ) do
-    opts = Keyword.merge(@default_retry_options, opts)
-    atoms = Keyword.get(opts, :atoms)
+  defmacro retry(opts, clauses) when is_list(opts) and is_list(clauses) do
+    opts = parse_opts(opts)
+    [do_clause, after_clause, else_clause] = parse_clauses(clauses)
+    stream_builder = Keyword.fetch!(opts, :with)
+    atoms = Keyword.fetch!(opts, :atoms)
 
     quote generated: true do
       fun = unquote(block_runner(do_clause, opts))
@@ -113,8 +126,8 @@ defmodule Retry do
     end
   end
 
-  defmacro retry(_stream_builder, _clauses) do
-    raise(ArgumentError, ~s(invalid syntax, only "retry", "after" and "else" are permitted))
+  defmacro retry(_, _) do
+    raise(ArgumentError, @retry_usage)
   end
 
   @doc """
@@ -277,6 +290,42 @@ defmodule Retry do
     quote generated: true do
       delays = unquote(stream_builder)
       [0] |> Stream.concat(delays)
+    end
+  end
+
+  defp parse_opts(opts) do
+    cond do
+      !Keyword.keyword?(opts) ->
+        raise(ArgumentError, @retry_usage)
+
+      missing_opt = Enum.find(@required_retry_options, &(&1 not in Keyword.keys(opts))) ->
+        raise(ArgumentError, ~s(invalid syntax: you must provide the "#{missing_opt}" option))
+
+      invalid_opt = Enum.find(Keyword.keys(opts), &(&1 not in @allowed_retry_options)) ->
+        raise(ArgumentError, ~s(invalid syntax: option "#{invalid_opt}" is not supported))
+
+      true ->
+        Keyword.merge(@default_retry_options, opts)
+    end
+  end
+
+  defp parse_clauses(clauses) do
+    cond do
+      !Keyword.keyword?(clauses) ->
+        raise(ArgumentError, @retry_usage)
+
+      missing_clause = Enum.find(@required_retry_clauses, &(&1 not in Keyword.keys(clauses))) ->
+        raise(ArgumentError, ~s(invalid syntax: you must provide a "#{missing_clause}" clause))
+
+      invalid_clause = Enum.find(Keyword.keys(clauses), &(&1 not in @allowed_retry_clauses)) ->
+        raise(
+          ArgumentError,
+          ~s(invalid syntax: clause "#{invalid_clause}" is not supported)
+        )
+
+      true ->
+        clauses_with_defaults = Keyword.merge(@default_retry_clauses, clauses)
+        Enum.map(@allowed_retry_clauses, &Keyword.get(clauses_with_defaults, &1))
     end
   end
 end

@@ -151,6 +151,28 @@ defmodule RetryTest do
       assert result == {:ok, "Everything's so awesome!"}
     end
 
+    test "uses the default 'after' action" do
+      result =
+        retry with: linear_backoff(50, 1) |> take(5) do
+          {:ok, "Everything's so awesome!"}
+        end
+
+      assert result == {:ok, "Everything's so awesome!"}
+    end
+
+    test "uses the default 'else' action" do
+      {elapsed, _} =
+        :timer.tc(fn ->
+          assert_raise CustomError, fn ->
+            retry with: linear_backoff(50, 1) |> take(5) do
+              raise CustomError
+            end
+          end
+        end)
+
+      assert elapsed / 1_000 < 250
+    end
+
     test "stream builder works with any Enum" do
       {elapsed, _} =
         :timer.tc(fn ->
@@ -170,10 +192,24 @@ defmodule RetryTest do
     end
 
     test "with invalid clauses raises argument error" do
-      error_message = ~s/invalid syntax, only "retry", "after" and "else" are permitted/
-
-      assert_raise ArgumentError, error_message, fn ->
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
         Code.eval_string("retry [1, 2, 3], foo: :invalid, bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/you must provide the "with" option/, fn ->
+        Code.eval_string("retry [foo: :invalid], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/option "foo" is not supported/, fn ->
+        Code.eval_string("retry [with: :ok, foo: :invalid], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/you must provide a "do" clause/, fn ->
+        Code.eval_string("retry [with: [1]], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
+        Code.eval_string("retry [with: [1]], do: :ok, foo: :invalid", [], __ENV__)
       end
     end
   end
