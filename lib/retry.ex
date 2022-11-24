@@ -258,9 +258,24 @@ defmodule Retry do
 
   defp block_runner(block, opts) do
     atoms = Keyword.get(opts, :atoms)
-    exceptions = Keyword.get(opts, :rescue_only)
+    rescue_onlies = Keyword.get(opts, :rescue_only)
 
     quote generated: true do
+      call_partial = fn f, e ->
+        try do
+          f.(e)
+        rescue
+          FunctionClauseError -> false
+        end
+      end
+
+      should_retry = fn
+        _e, :all -> true
+        e, s when is_atom(s) -> is_struct(e, s)
+        e, f when is_function(f) -> call_partial.(f, e)
+        _, _ -> true
+      end
+
       fn ->
         try do
           case unquote(block) do
@@ -280,7 +295,14 @@ defmodule Retry do
           end
         rescue
           e ->
-            if e.__struct__ in unquote(exceptions) do
+            retry? =
+              if is_list(unquote(rescue_onlies)) do
+                Enum.any?(unquote(rescue_onlies), &should_retry.(e, &1))
+              else
+                should_retry.(e, unquote(rescue_onlies))
+              end
+
+            if retry? do
               {:cont, {:exception, e}}
             else
               reraise e, __STACKTRACE__

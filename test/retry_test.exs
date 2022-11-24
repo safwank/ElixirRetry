@@ -102,23 +102,33 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
-    test "retries execution when a whitelisted exception is raised" do
-      custom_error_list = [CustomError]
+    test "retries execution when an allowed exception is raised" do
+      testcases = [
+        CustomError,
+        [OtherThing, CustomError],
+        :all,
+        [:other_thing, :all],
+        fn _ -> true end,
+        [fn _ -> false end, fn _ -> true end],
+        [fn :partial -> true end, fn _ -> true end]
+      ]
 
-      {elapsed, _} =
-        :timer.tc(fn ->
-          assert_raise CustomError, fn ->
-            retry with: linear_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
-              raise CustomError
-            after
-              _ -> :ok
-            else
-              error -> raise error
+      for testcase <- testcases do
+        {elapsed, _} =
+          :timer.tc(fn ->
+            assert_raise CustomError, fn ->
+              retry with: linear_backoff(50, 1) |> take(5), rescue_only: testcase do
+                raise CustomError
+              after
+                _ -> :ok
+              else
+                error -> raise error
+              end
             end
-          end
-        end)
+          end)
 
-      assert elapsed / 1_000 >= 250
+        assert elapsed / 1_000 >= 250
+      end
     end
 
     test "does not retry execution when an unknown exception is raised" do
