@@ -7,6 +7,7 @@ defmodule RetryTest do
   doctest Retry
 
   defmodule(CustomError, do: defexception(message: "custom error!"))
+  defmodule(NotOkay, do: defstruct([]))
 
   describe "retry" do
     test "retries execution for specified attempts when result is error tuple" do
@@ -45,44 +46,38 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
-    test "retries execution for specified attempts when result is a specified atom" do
-      retry_atom = :not_ok
+    test "retries execution for specified attempts when allowed result is returned" do
+      testcases = [
+        {:not_ok, :all},
+        {:not_ok, [:foo, :all]},
+        {:not_ok, :not_ok},
+        {:not_ok, [:foo, :not_ok]},
+        {{:not_ok, :foo}, [:foo, :not_ok]},
+        {%NotOkay{}, NotOkay},
+        {%NotOkay{}, [Foo, NotOkay]},
+        {:not_ok, fn _ -> true end},
+        {:not_ok, [fn _ -> false end, fn _ -> true end]},
+        {:not_ok, [fn _ -> nil end, fn _ -> 1 end]},
+        {:not_ok, [fn :partial -> false end, fn _ -> true end]}
+      ]
 
-      {elapsed, _} =
-        :timer.tc(fn ->
-          result =
-            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
-              retry_atom
-            after
-              _ -> :ok
-            else
-              error -> error
-            end
+      for {rval, atoms} <- testcases do
+        {elapsed, _} =
+          :timer.tc(fn ->
+            result =
+              retry with: linear_backoff(50, 1) |> take(5), atoms: atoms do
+                rval
+              after
+                _ -> :ok
+              else
+                error -> error
+              end
 
-          assert result == retry_atom
-        end)
+            assert result == rval
+          end)
 
-      assert elapsed / 1_000 >= 250
-    end
-
-    test "retries execution for specified attempts when result is a tuple with a specified atom" do
-      retry_atom = :not_ok
-
-      {elapsed, _} =
-        :timer.tc(fn ->
-          result =
-            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
-              {retry_atom, "Some error message"}
-            after
-              _ -> :ok
-            else
-              error -> error
-            end
-
-          assert result == {retry_atom, "Some error message"}
-        end)
-
-      assert elapsed / 1_000 >= 250
+        assert elapsed / 1_000 >= 250
+      end
     end
 
     test "retries execution for specified attempts when error is raised" do
@@ -110,7 +105,7 @@ defmodule RetryTest do
         [:other_thing, :all],
         fn _ -> true end,
         [fn _ -> false end, fn _ -> true end],
-        [fn :partial -> true end, fn _ -> true end]
+        [fn :partial -> false end, fn _ -> true end]
       ]
 
       for testcase <- testcases do
