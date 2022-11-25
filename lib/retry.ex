@@ -47,7 +47,8 @@ defmodule Retry do
       default: [
         else:
           quote do
-            error -> raise error
+            e when is_exception(e) -> raise e
+            e -> e
           end,
         after:
           quote do
@@ -126,6 +127,8 @@ defmodule Retry do
         error -> error
       end
 
+  The `after` and `else` clauses are optional. By default, a successful value is just returned. If
+  the timeout is expires, the last erroneous value is returned or the last exception is re-raised.
   """
   defmacro retry(opts, clauses) when is_list(opts) and is_list(clauses) do
     opts = parse_opts(opts, @retry_meta)
@@ -245,9 +248,11 @@ defmodule Retry do
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the delay stream.
 
-  The `after` block evaluates only when the `do` block returns a truthy value.
-
-  On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
+  The `after` block evaluates only when the `do` block returns a truthy
+  value. On the other hand, the `else` block evaluates only when the
+  `do` block remains falsy after timeout.Both are optional. By default,
+  a success value will be returned as `{:ok, value}` and an erroneous
+  value will be returned as `{:error, value}`.
 
   Example
 

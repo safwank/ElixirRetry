@@ -160,7 +160,7 @@ defmodule RetryTest do
       assert result == {:ok, "Everything's so awesome!"}
     end
 
-    test "uses the default 'else' action" do
+    test "by default, 'else' re-raises an exception" do
       {elapsed, _} =
         :timer.tc(fn ->
           assert_raise CustomError, fn ->
@@ -171,6 +171,20 @@ defmodule RetryTest do
         end)
 
       assert elapsed / 1_000 < 250
+    end
+
+    test "by default, 'else' returns the erroneous result if not an exception" do
+      {elapsed, _} =
+        :timer.tc(fn ->
+          result =
+            retry with: linear_backoff(50, 1) |> take(5) do
+              {:error, "oh noes!"}
+            end
+
+          assert result == {:error, "oh noes!"}
+        end)
+
+      assert elapsed / 1_000 >= 250
     end
 
     test "stream builder works with any Enum" do
