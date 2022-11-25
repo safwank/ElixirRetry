@@ -435,39 +435,43 @@ defmodule RetryTest do
       assert result == {:error, "Not awesome"}
     end
 
-    test "with invalid clauses raises argument error" do
-      error_message = ~s/invalid syntax, only "wait", "after" and "else" are permitted/
+    test "after/else order does not matter" do
+      result =
+        wait linear_backoff(50, 1) |> take(2) do
+          {:ok, "Everything's so awesome!"}
+        else
+          result -> result
+        after
+          _ ->
+            {:ok, "More awesome"}
+        end
 
-      assert_raise ArgumentError, error_message, fn ->
+      assert result == {:ok, "More awesome"}
+    end
+
+    test "Uses default after/else clauses" do
+      testcases = [
+        {true, {:ok, true}},
+        {false, {:error, false}}
+      ]
+
+      for {rval, expected} <- testcases do
+        result =
+          wait linear_backoff(50, 1) |> take(2) do
+            rval
+          end
+
+        assert result == expected
+      end
+    end
+
+    test "with invalid clauses raises argument error" do
+      assert_raise ArgumentError, ~r/you must provide a "do" clause/, fn ->
         Code.eval_string("wait [1, 2, 3], foo: :invalid", [], __ENV__)
       end
 
-      assert_raise ArgumentError, error_message, fn ->
+      assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
         Code.eval_string("wait [1, 2, 3], do: :valid, foo: :invalid", [], __ENV__)
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string("wait [1, 2, 3], do: :valid, do: :duplicate", [], __ENV__)
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string(
-          "wait [1, 2, 3], do: :valid, after: :valid, after: :duplicate",
-          [],
-          __ENV__
-        )
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string(
-          "wait [1, 2, 3], do: :valid, after: :valid, else: :valid, else: :duplicate",
-          [],
-          __ENV__
-        )
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string("wait [1, 2, 3], do: false, else: :wrong, after: :order", [], __ENV__)
       end
     end
   end
