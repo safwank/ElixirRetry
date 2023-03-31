@@ -3,6 +3,8 @@ defmodule RetryTest do
   use Retry
 
   import Stream
+  import ExUnit.CaptureLog
+  require Logger
 
   doctest Retry
 
@@ -144,16 +146,19 @@ defmodule RetryTest do
     end
 
     test "does not have to retry execution when there is no error" do
-      result =
-        retry with: linear_backoff(50, 1) |> take(5) do
-          {:ok, "Everything's so awesome!"}
-        after
-          result -> result
-        else
-          _ -> :error
+      f = fn ->
+          retry with: linear_backoff(50, 1) |> take(5) do
+            Logger.info("running")
+            {:ok, "Everything's so awesome!"}
+          after
+            result -> result
+          else
+            _ -> :error
+          end
         end
 
-      assert result == {:ok, "Everything's so awesome!"}
+      assert f.() == {:ok, "Everything's so awesome!"}
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
     end
 
     test "uses the default 'after' action" do

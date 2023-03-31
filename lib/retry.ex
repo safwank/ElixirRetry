@@ -329,17 +329,19 @@ defmodule Retry do
 
       fn ->
         try do
+          result = unquote(block)
+
           retry? =
             if is_list(unquote(atoms)) do
-              Enum.any?(unquote(atoms), &should_retry.(unquote(block), &1))
+              Enum.any?(unquote(atoms), &should_retry.(result, &1))
             else
-              should_retry.(unquote(block), unquote(atoms))
+              should_retry.(result, unquote(atoms))
             end
 
           if retry? do
-            {:cont, {:retriable, unquote(block)}}
+            {:cont, {:retriable, result}}
           else
-            {:halt, unquote(block)}
+            {:halt, result}
           end
         rescue
           e ->
