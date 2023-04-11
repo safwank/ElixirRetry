@@ -134,7 +134,6 @@ defmodule Retry do
     opts = parse_opts(opts, @retry_meta)
     [do_clause, after_clause, else_clause] = parse_clauses(clauses, @retry_meta)
     stream_builder = Keyword.fetch!(opts, :with)
-    atoms = Keyword.fetch!(opts, :atoms)
 
     quote generated: true do
       fun = unquote(block_runner(do_clause, opts))
@@ -150,12 +149,7 @@ defmodule Retry do
             unquote(else_clause)
           end
 
-        e = {atom, _} when atom in unquote(atoms) ->
-          case e do
-            unquote(else_clause)
-          end
-
-        e when is_atom(e) and e in unquote(atoms) ->
+        {:retriable, e} ->
           case e do
             unquote(else_clause)
           end
@@ -296,29 +290,52 @@ defmodule Retry do
 
   defp block_runner(block, opts) do
     atoms = Keyword.get(opts, :atoms)
-    exceptions = Keyword.get(opts, :rescue_only)
+    rescue_onlies = Keyword.get(opts, :rescue_only)
 
     quote generated: true do
+      call_partial = fn f, x ->
+        try do
+          !!f.(x)
+        rescue
+          FunctionClauseError -> false
+        end
+      end
+
+      should_retry = fn
+        _x, :all -> true
+        x, a when is_atom(x) and is_atom(a) -> x == a
+        x, a when is_struct(x) and is_atom(a) -> is_struct(x, a)
+        {x, _}, a when is_atom(x) and is_atom(a) -> x == a
+        x, f when is_function(f) -> call_partial.(f, x)
+        _, _ -> false
+      end
+
       fn ->
         try do
-          case unquote(block) do
-            {atom, _} = result ->
-              if atom in unquote(atoms) do
-                {:cont, result}
-              else
-                {:halt, result}
-              end
+          result = unquote(block)
 
-            result ->
-              if is_atom(result) and result in unquote(atoms) do
-                {:cont, result}
-              else
-                {:halt, result}
-              end
+          retry? =
+            if is_list(unquote(atoms)) do
+              Enum.any?(unquote(atoms), &should_retry.(result, &1))
+            else
+              should_retry.(result, unquote(atoms))
+            end
+
+          if retry? do
+            {:cont, {:retriable, result}}
+          else
+            {:halt, result}
           end
         rescue
           e ->
-            if e.__struct__ in unquote(exceptions) do
+            retry? =
+              if is_list(unquote(rescue_onlies)) do
+                Enum.any?(unquote(rescue_onlies), &should_retry.(e, &1))
+              else
+                should_retry.(e, unquote(rescue_onlies))
+              end
+
+            if retry? do
               {:cont, {:exception, e}}
             else
               reraise e, __STACKTRACE__
