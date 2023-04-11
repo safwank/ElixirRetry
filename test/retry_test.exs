@@ -229,6 +229,14 @@ defmodule RetryTest do
       assert_raise ArgumentError, ~r/duplicate clauses: do/, fn ->
         Code.eval_string("retry [with: [1]], do: :valid, do: :duplicate", [], __ENV__)
       end
+
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
+        Code.eval_string("retry :atom, do: :valid, do: :duplicate", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
+        Code.eval_string("retry [with: [1]], [1]", [], __ENV__)
+      end
     end
   end
 
