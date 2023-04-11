@@ -78,7 +78,26 @@ else
 end
 ```
 
-This will try the block, and return the result, as soon as it succeeds. On a timeout error, this example will wait an exponentially increasing amount of time (`exponential_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). Finally, it will stop retrying after 10 seconds have elapsed (`expiry/2`).
+#### Example -- optional clauses
+
+```elixir
+result = retry with: constant_backoff(100) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+end
+```
+
+This example is equivalent to:
+
+```elixir
+result = retry with: constant_backoff(100) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  e when is_exception(e) -> raise e
+  e -> e
+end
+```
 
 #### Example -- retry annotation
 

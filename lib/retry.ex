@@ -128,7 +128,23 @@ defmodule Retry do
       end
 
   The `after` and `else` clauses are optional. By default, a successful value is just returned. If
-  the timeout is expires, the last erroneous value is returned or the last exception is re-raised.
+  the timeout expires, the last erroneous value is returned or the last exception is re-raised.
+  Essentially, this:
+
+      retry with: ... do
+        ...
+      end
+
+  Is equivalent to:
+
+      retry with: ... do
+        ...
+      after
+        result -> result
+      else
+        e when is_exception(e) -> raise e
+        e -> e
+      end
   """
   defmacro retry(opts, clauses) when is_list(opts) and is_list(clauses) do
     opts = parse_opts(opts, @retry_meta)
