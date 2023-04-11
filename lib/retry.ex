@@ -398,6 +398,12 @@ defmodule Retry do
           ~s(invalid syntax: clause "#{invalid_clause}" is not supported)
         )
 
+      (dup_clauses = Enum.uniq(Keyword.keys(clauses) -- Enum.uniq(Keyword.keys(clauses)))) != [] ->
+        raise(
+          ArgumentError,
+          ~s(invalid syntax: duplicate clauses: #{Enum.join(dup_clauses, ", ")})
+        )
+
       true ->
         clauses_with_defaults = Keyword.merge(meta.clauses.default, clauses)
         Enum.map(meta.clauses.allowed, &Keyword.get(clauses_with_defaults, &1))

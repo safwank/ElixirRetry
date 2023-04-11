@@ -147,15 +147,15 @@ defmodule RetryTest do
 
     test "does not have to retry execution when there is no error" do
       f = fn ->
-          retry with: linear_backoff(50, 1) |> take(5) do
-            Logger.info("running")
-            {:ok, "Everything's so awesome!"}
-          after
-            result -> result
-          else
-            _ -> :error
-          end
+        retry with: linear_backoff(50, 1) |> take(5) do
+          Logger.info("running")
+          {:ok, "Everything's so awesome!"}
+        after
+          result -> result
+        else
+          _ -> :error
         end
+      end
 
       assert f.() == {:ok, "Everything's so awesome!"}
       assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
@@ -234,6 +234,10 @@ defmodule RetryTest do
 
       assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
         Code.eval_string("retry [with: [1]], do: :ok, foo: :invalid", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/duplicate clauses: do/, fn ->
+        Code.eval_string("retry [with: [1]], do: :valid, do: :duplicate", [], __ENV__)
       end
     end
   end
@@ -496,6 +500,10 @@ defmodule RetryTest do
 
       assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
         Code.eval_string("wait [1, 2, 3], do: :valid, foo: :invalid", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/duplicate clauses: do/, fn ->
+        Code.eval_string("wait [1, 2, 3], do: :valid, do: :duplicate", [], __ENV__)
       end
     end
   end
