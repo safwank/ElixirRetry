@@ -10,6 +10,10 @@ defmodule Retry.Mixfile do
       version: "0.17.0",
       elixir: "~> 1.11",
       source_url: "https://github.com/safwank/ElixirRetry",
+      docs: [
+        extras: ["README.md"],
+        source_ref: "master"
+      ],
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
