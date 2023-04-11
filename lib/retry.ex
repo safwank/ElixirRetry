@@ -146,6 +146,7 @@ defmodule Retry do
         e -> e
       end
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro retry(opts, clauses) when is_list(opts) and is_list(clauses) do
     opts = parse_opts(opts, @retry_meta)
     [do_clause, after_clause, else_clause] = parse_clauses(clauses, @retry_meta)
