@@ -60,7 +60,12 @@ defmodule RetryTest do
         {:not_ok, fn _ -> true end},
         {:not_ok, [fn _ -> false end, fn _ -> true end]},
         {:not_ok, [fn _ -> nil end, fn _ -> 1 end]},
-        {:not_ok, [fn :partial -> false end, fn _ -> true end]}
+        {:not_ok, [fn :partial -> false end, fn _ -> true end]},
+        {:not_ok,
+         fn
+           :partial -> false
+           :not_ok -> true
+         end}
       ]
 
       for {rval, atoms} <- testcases do
@@ -80,6 +85,22 @@ defmodule RetryTest do
 
         assert elapsed / 1_000 >= 250
       end
+    end
+
+    test "does not retry on :error if atoms is specified" do
+      f = fn ->
+        retry with: linear_backoff(50, 1) |> take(5), atoms: :not_ok do
+          Logger.info("running")
+          :error
+        after
+          result -> result
+        else
+          error -> :not_this
+        end
+      end
+
+      assert f.() == :error
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
     end
 
     test "retries execution for specified attempts when error is raised" do
@@ -145,17 +166,34 @@ defmodule RetryTest do
       assert elapsed / 1_000 < 250
     end
 
-    test "does not have to retry execution when there is no error" do
+    test "does not retry on RuntimeError if some other rescue_only is specified" do
       f = fn ->
-          retry with: linear_backoff(50, 1) |> take(5) do
+        assert_raise RuntimeError, fn ->
+          retry with: linear_backoff(50, 1) |> take(5), rescue_only: CustomError do
             Logger.info("running")
-            {:ok, "Everything's so awesome!"}
+            raise RuntimeError
           after
-            result -> result
+            _ -> :ok
           else
-            _ -> :error
+            error -> raise error
           end
         end
+      end
+
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
+    end
+
+    test "does not have to retry execution when there is no error" do
+      f = fn ->
+        retry with: linear_backoff(50, 1) |> take(5) do
+          Logger.info("running")
+          {:ok, "Everything's so awesome!"}
+        after
+          result -> result
+        else
+          _ -> :error
+        end
+      end
 
       assert f.() == {:ok, "Everything's so awesome!"}
       assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
