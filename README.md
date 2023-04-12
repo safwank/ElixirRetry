@@ -36,9 +36,7 @@ An optional list of atoms can be specified in `:atoms` if you need to retry anyt
 
 Similarly, an optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than `RuntimeError`, e.g. `retry([with: _, rescue_only: [CustomError]], do: _, after: _, else: _)`.
 
-The `after` block evaluates only when the `do` block returns a valid value before timeout.
-
-On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout.
+The `after` block evaluates only when the `do` block returns a valid value before timeout. On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout. Both are optional. By default, the `else` clause will return the last erroneous value or re-raise the last exception. The default `after` clause will simply return the last successful value.
 
 #### Example -- constant backoff
 
@@ -80,7 +78,26 @@ else
 end
 ```
 
-This will try the block, and return the result, as soon as it succeeds. On a timeout error, this example will wait an exponentially increasing amount of time (`exponential_backoff/0`). Each delay will be randomly adjusted to remain within +/-10% of its original value (`randomize/2`). Finally, it will stop retrying after 10 seconds have elapsed (`expiry/2`).
+#### Example -- optional clauses
+
+```elixir
+result = retry with: constant_backoff(100) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+end
+```
+
+This example is equivalent to:
+
+```elixir
+result = retry with: constant_backoff(100) |> Stream.take(10) do
+  ExternalApi.do_something # fails if other system is down
+after
+  result -> result
+else
+  e when is_exception(e) -> raise e
+  e -> e
+end
+```
 
 #### Example -- retry annotation
 
@@ -133,8 +150,6 @@ end
 
 This example retries every 100 milliseconds and expires after 1 second.
 
-The `after` block evaluates only when the `do` block returns a truthy value.
-
-On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
+The `after` block evaluates only when the `do` block returns a truthy value. On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout. Both are optional. By default, a success value will be returned as `{:ok, value}` and an erroneous value will be returned as `{:error, value}`.
 
 Pretty nifty for those pesky asynchronous tests and building more reliable systems in general!

@@ -32,27 +32,63 @@ defmodule Retry do
 
   """
 
-  @default_retry_options [atoms: [:error], rescue_only: [RuntimeError]]
-  @required_retry_options [:with]
-  @allowed_retry_options @required_retry_options ++ Keyword.keys(@default_retry_options)
+  @retry_meta %{
+    options: %{
+      required: [:with],
+      allowed: [:with, :atoms, :rescue_only],
+      default: [
+        atoms: [:error],
+        rescue_only: [RuntimeError]
+      ]
+    },
+    clauses: %{
+      required: [:do],
+      allowed: [:do, :after, :else],
+      default: [
+        else:
+          quote do
+            e when is_exception(e) -> raise e
+            e -> e
+          end,
+        after:
+          quote do
+            result -> result
+          end
+      ]
+    },
+    usage: """
+    Invalid Syntax. Usage:
 
-  @default_retry_else_clause (quote do
-                                error -> raise error
-                              end)
-  @default_retry_after_clause (quote do
-                                 result -> result
-                               end)
-  @default_retry_clauses [after: @default_retry_after_clause, else: @default_retry_else_clause]
-  @required_retry_clauses [:do]
-  @allowed_retry_clauses @required_retry_clauses ++ Keyword.keys(@default_retry_clauses)
+    retry with: ... do
+      ...
+    end
+    """
+  }
 
-  @retry_usage """
-  Invalid Syntax. Usage:
+  @wait_meta %{
+    options: %{required: [], allowed: [], default: []},
+    clauses: %{
+      required: [:do],
+      allowed: [:do, :after, :else],
+      default: [
+        else:
+          quote do
+            error -> {:error, error}
+          end,
+        after:
+          quote do
+            result -> {:ok, result}
+          end
+      ]
+    },
+    usage: """
+    Invalid Syntax. Usage:
 
-  retry with: ... do
-    ...
-  end
-  """
+    wait ... do
+      ...
+    end
+    """
+  }
 
   @doc false
   defmacro __using__(_opts) do
@@ -91,10 +127,29 @@ defmodule Retry do
         error -> error
       end
 
+  The `after` and `else` clauses are optional. By default, a successful value is just returned. If
+  the timeout expires, the last erroneous value is returned or the last exception is re-raised.
+  Essentially, this:
+
+      retry with: ... do
+        ...
+      end
+
+  Is equivalent to:
+
+      retry with: ... do
+        ...
+      after
+        result -> result
+      else
+        e when is_exception(e) -> raise e
+        e -> e
+      end
   """
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defmacro retry(opts, clauses) when is_list(opts) and is_list(clauses) do
-    opts = parse_opts(opts)
-    [do_clause, after_clause, else_clause] = parse_clauses(clauses)
+    opts = parse_opts(opts, @retry_meta)
+    [do_clause, after_clause, else_clause] = parse_clauses(clauses, @retry_meta)
     stream_builder = Keyword.fetch!(opts, :with)
 
     quote generated: true do
@@ -125,7 +180,7 @@ defmodule Retry do
   end
 
   defmacro retry(_, _) do
-    raise(ArgumentError, @retry_usage)
+    raise(ArgumentError, @retry_meta.usage)
   end
 
   @doc """
@@ -204,9 +259,11 @@ defmodule Retry do
   Wait for a block of code to be truthy delaying between each attempt
   the duration specified by the next item in the delay stream.
 
-  The `after` block evaluates only when the `do` block returns a truthy value.
-
-  On the other hand, the `else` block evaluates only when the `do` block remains falsy after timeout.
+  The `after` block evaluates only when the `do` block returns a truthy
+  value. On the other hand, the `else` block evaluates only when the
+  `do` block remains falsy after timeout.Both are optional. By default,
+  a success value will be returned as `{:ok, value}` and an erroneous
+  value will be returned as `{:error, value}`.
 
   Example
 
@@ -221,7 +278,9 @@ defmodule Retry do
       end
 
   """
-  defmacro wait(stream_builder, do: do_clause, after: after_clause, else: else_clause) do
+  defmacro wait(stream_builder, clauses) do
+    [do_clause, after_clause, else_clause] = parse_clauses(clauses, @wait_meta)
+
     quote generated: true do
       unquote(delays_from(stream_builder))
       |> Enum.reduce_while(nil, fn delay, _last_result ->
@@ -244,10 +303,6 @@ defmodule Retry do
           end
       end
     end
-  end
-
-  defmacro wait(_stream_builder, _clauses) do
-    raise(ArgumentError, ~s(invalid syntax, only "wait", "after" and "else" are permitted))
   end
 
   defp block_runner(block, opts) do
@@ -312,39 +367,45 @@ defmodule Retry do
     end
   end
 
-  defp parse_opts(opts) do
+  defp parse_opts(opts, meta) do
     cond do
       !Keyword.keyword?(opts) ->
-        raise(ArgumentError, @retry_usage)
+        raise(ArgumentError, meta.usage)
 
-      missing_opt = Enum.find(@required_retry_options, &(&1 not in Keyword.keys(opts))) ->
+      missing_opt = Enum.find(meta.options.required, &(&1 not in Keyword.keys(opts))) ->
         raise(ArgumentError, ~s(invalid syntax: you must provide the "#{missing_opt}" option))
 
-      invalid_opt = Enum.find(Keyword.keys(opts), &(&1 not in @allowed_retry_options)) ->
+      invalid_opt = Enum.find(Keyword.keys(opts), &(&1 not in meta.options.allowed)) ->
         raise(ArgumentError, ~s(invalid syntax: option "#{invalid_opt}" is not supported))
 
       true ->
-        Keyword.merge(@default_retry_options, opts)
+        Keyword.merge(meta.options.default, opts)
     end
   end
 
-  defp parse_clauses(clauses) do
+  defp parse_clauses(clauses, meta) do
     cond do
       !Keyword.keyword?(clauses) ->
-        raise(ArgumentError, @retry_usage)
+        raise(ArgumentError, meta.usage)
 
-      missing_clause = Enum.find(@required_retry_clauses, &(&1 not in Keyword.keys(clauses))) ->
+      missing_clause = Enum.find(meta.clauses.required, &(&1 not in Keyword.keys(clauses))) ->
         raise(ArgumentError, ~s(invalid syntax: you must provide a "#{missing_clause}" clause))
 
-      invalid_clause = Enum.find(Keyword.keys(clauses), &(&1 not in @allowed_retry_clauses)) ->
+      invalid_clause = Enum.find(Keyword.keys(clauses), &(&1 not in meta.clauses.allowed)) ->
         raise(
           ArgumentError,
           ~s(invalid syntax: clause "#{invalid_clause}" is not supported)
         )
 
+      (dup_clauses = Enum.uniq(Keyword.keys(clauses) -- Enum.uniq(Keyword.keys(clauses)))) != [] ->
+        raise(
+          ArgumentError,
+          ~s(invalid syntax: duplicate clauses: #{Enum.join(dup_clauses, ", ")})
+        )
+
       true ->
-        clauses_with_defaults = Keyword.merge(@default_retry_clauses, clauses)
-        Enum.map(@allowed_retry_clauses, &Keyword.get(clauses_with_defaults, &1))
+        clauses_with_defaults = Keyword.merge(meta.clauses.default, clauses)
+        Enum.map(meta.clauses.allowed, &Keyword.get(clauses_with_defaults, &1))
     end
   end
 end
