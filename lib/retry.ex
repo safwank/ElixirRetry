@@ -103,13 +103,31 @@ defmodule Retry do
   Retry a block of code delaying between each attempt the duration specified by
   the next item in the `with` delay stream.
 
-  If the block returns any of the atoms specified in `atoms`, a retry will be attempted.
-  Other atoms or atom-result tuples will not be retried. If `atoms` is not specified,
-  it defaults to `[:error]`.
+  Both the values and exceptions that will be retried can be customized. To control which values
+  will be retried, provide the `atoms` option. To control which exceptions are retried, provide
+  the `rescue_only` option. For example:
 
-  Similary, if the block raises any of the exceptions specified in `rescue_only`, a retry
-  will be attempted. Other exceptions will not be retried. If `rescue_only` is
-  not specified, it defaults to `[RuntimeError]`.
+  ```
+  retry with: ..., atoms: [:not_ok], rescue_only: [CustomError] do
+    ...
+  end
+  ```
+
+  Both `atoms` and `rescue_only` can accept a number of different types:
+
+  * An atom (for example: `:not_okay`, `SomeStruct`, or `CustomError`). In this case, the `do`
+    block will be retried in any of the following cases:
+    * The atom itself is returned
+    * The atom is returned in the first position of a two-tuple (for example, `{:not_okay, _}`)
+    * A struct of that type is returned/raised
+  * The special atom `:all`. In this case, all values/exceptions will be retried.
+  * A function (for example: `fn val -> val.starts_with("ok") end`) or partial function (for
+    example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called with
+    the return value and the `do` block will be retried if the function returns a truthy value.
+    If the function returns a falsy value or if no function clause matches, the `do` block
+    will not be retried.
+  * A list of any of the above. The `do` block will be retried if any of the items in the list
+    matches.
 
   The `after` block evaluates only when the `do` block returns a valid value before timeout.
 

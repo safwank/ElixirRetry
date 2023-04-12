@@ -32,9 +32,23 @@ Check out the [API reference](https://hexdocs.pm/retry/api-reference.html) for t
 
 The `retry([with: _,] do: _, after: _, else: _)` macro provides a way to retry a block of code on failure with a variety of delay and give up behaviors. By default, the execution of a block is considered a failure if it returns `:error`, `{:error, _}` or raises a runtime error.
 
-An optional list of atoms can be specified in `:atoms` if you need to retry anything other than `:error` or `{:error, _}`, e.g. `retry([with: _, atoms: [:not_ok]], do: _, after: _, else: _)`.
+Both the values and exceptions that will be retried can be customized. To control which values will be retried, provide the `atoms` option. To control which exceptions are retried, provide the `rescue_only` option. For example:
 
-Similarly, an optional list of exceptions can be specified in `:rescue_only` if you need to retry anything other than `RuntimeError`, e.g. `retry([with: _, rescue_only: [CustomError]], do: _, after: _, else: _)`.
+```
+retry with: ..., atoms: [:not_ok], rescue_only: [CustomError] do
+  ...
+end
+```
+
+Both `atoms` and `rescue_only` can accept a number of different types:
+
+* An atom (for example: `:not_okay`, `SomeStruct`, or `CustomError`). In this case, the `do` block will be retried in any of the following cases:
+  * The atom itself is returned
+  * The atom is returned in the first position of a two-tuple (for example, `{:not_okay, _}`)
+  * A struct of that type is returned/raised
+* The special atom `:all`. In this case, all values/exceptions will be retried.
+* A function (for example: `fn val -> val.starts_with("ok") end`) or partial function (for example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called with the return value and the `do` block will be retried if the function returns a truthy value. If the function returns a falsy value or if no function clause matches, the `do` block will not be retried.
+* A list of any of the above. The `do` block will be retried if any of the items in the list matches.
 
 The `after` block evaluates only when the `do` block returns a valid value before timeout. On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout. Both are optional. By default, the `else` clause will return the last erroneous value or re-raise the last exception. The default `after` clause will simply return the last successful value.
 
