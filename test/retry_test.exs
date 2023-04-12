@@ -151,6 +151,42 @@ defmodule RetryTest do
       assert result == {:ok, "Everything's so awesome!"}
     end
 
+    test "uses the default 'after' action" do
+      result =
+        retry with: linear_backoff(50, 1) |> take(5) do
+          {:ok, "Everything's so awesome!"}
+        end
+
+      assert result == {:ok, "Everything's so awesome!"}
+    end
+
+    test "by default, 'else' re-raises an exception" do
+      {elapsed, _} =
+        :timer.tc(fn ->
+          assert_raise CustomError, fn ->
+            retry with: linear_backoff(50, 1) |> take(5) do
+              raise CustomError
+            end
+          end
+        end)
+
+      assert elapsed / 1_000 < 250
+    end
+
+    test "by default, 'else' returns the erroneous result if not an exception" do
+      {elapsed, _} =
+        :timer.tc(fn ->
+          result =
+            retry with: linear_backoff(50, 1) |> take(5) do
+              {:error, "oh noes!"}
+            end
+
+          assert result == {:error, "oh noes!"}
+        end)
+
+      assert elapsed / 1_000 >= 250
+    end
+
     test "stream builder works with any Enum" do
       {elapsed, _} =
         :timer.tc(fn ->
@@ -170,10 +206,36 @@ defmodule RetryTest do
     end
 
     test "with invalid clauses raises argument error" do
-      error_message = ~s/invalid syntax, only "retry", "after" and "else" are permitted/
-
-      assert_raise ArgumentError, error_message, fn ->
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
         Code.eval_string("retry [1, 2, 3], foo: :invalid, bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/you must provide the "with" option/, fn ->
+        Code.eval_string("retry [foo: :invalid], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/option "foo" is not supported/, fn ->
+        Code.eval_string("retry [with: :ok, foo: :invalid], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/you must provide a "do" clause/, fn ->
+        Code.eval_string("retry [with: [1]], bar: :not_ok", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
+        Code.eval_string("retry [with: [1]], do: :ok, foo: :invalid", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/duplicate clauses: do/, fn ->
+        Code.eval_string("retry [with: [1]], do: :valid, do: :duplicate", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
+        Code.eval_string("retry :atom, do: :valid, do: :duplicate", [], __ENV__)
+      end
+
+      assert_raise ArgumentError, ~r/Invalid Syntax. Usage:/, fn ->
+        Code.eval_string("retry [with: [1]], [1]", [], __ENV__)
       end
     end
   end
@@ -399,39 +461,47 @@ defmodule RetryTest do
       assert result == {:error, "Not awesome"}
     end
 
-    test "with invalid clauses raises argument error" do
-      error_message = ~s/invalid syntax, only "wait", "after" and "else" are permitted/
+    test "after/else order does not matter" do
+      result =
+        wait linear_backoff(50, 1) |> take(2) do
+          {:ok, "Everything's so awesome!"}
+        else
+          result -> result
+        after
+          _ ->
+            {:ok, "More awesome"}
+        end
 
-      assert_raise ArgumentError, error_message, fn ->
+      assert result == {:ok, "More awesome"}
+    end
+
+    test "Uses default after/else clauses" do
+      testcases = [
+        {true, {:ok, true}},
+        {false, {:error, false}}
+      ]
+
+      for {rval, expected} <- testcases do
+        result =
+          wait linear_backoff(50, 1) |> take(2) do
+            rval
+          end
+
+        assert result == expected
+      end
+    end
+
+    test "with invalid clauses raises argument error" do
+      assert_raise ArgumentError, ~r/you must provide a "do" clause/, fn ->
         Code.eval_string("wait [1, 2, 3], foo: :invalid", [], __ENV__)
       end
 
-      assert_raise ArgumentError, error_message, fn ->
+      assert_raise ArgumentError, ~r/clause "foo" is not supported/, fn ->
         Code.eval_string("wait [1, 2, 3], do: :valid, foo: :invalid", [], __ENV__)
       end
 
-      assert_raise ArgumentError, error_message, fn ->
+      assert_raise ArgumentError, ~r/duplicate clauses: do/, fn ->
         Code.eval_string("wait [1, 2, 3], do: :valid, do: :duplicate", [], __ENV__)
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string(
-          "wait [1, 2, 3], do: :valid, after: :valid, after: :duplicate",
-          [],
-          __ENV__
-        )
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string(
-          "wait [1, 2, 3], do: :valid, after: :valid, else: :valid, else: :duplicate",
-          [],
-          __ENV__
-        )
-      end
-
-      assert_raise ArgumentError, error_message, fn ->
-        Code.eval_string("wait [1, 2, 3], do: false, else: :wrong, after: :order", [], __ENV__)
       end
     end
   end
