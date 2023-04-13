@@ -95,7 +95,7 @@ defmodule RetryTest do
         after
           result -> result
         else
-          error -> :not_this
+          _error -> :not_this
         end
       end
 
