@@ -47,7 +47,7 @@ Both `atoms` and `rescue_only` can accept a number of different types:
   * The atom is returned in the first position of a two-tuple (for example, `{:not_okay, _}`)
   * A struct of that type is returned/raised
 * The special atom `:all`. In this case, all values/exceptions will be retried.
-* A function (for example: `fn val -> val.starts_with("ok") end`) or partial function (for example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called with the return value and the `do` block will be retried if the function returns a truthy value. If the function returns a falsy value or if no function clause matches, the `do` block will not be retried.
+* A function (for example: `fn val -> String.starts_with?(val, "ok") end`) or partial function (for example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called with the return value and the `do` block will be retried if the function returns a truthy value. If the function returns a falsy value or if no function clause matches, the `do` block will not be retried.
 * A list of any of the above. The `do` block will be retried if any of the items in the list matches.
 
 The `after` block evaluates only when the `do` block returns a valid value before timeout. On the other hand, the `else` block evaluates only when the `do` block remains erroneous after timeout. Both are optional. By default, the `else` clause will return the last erroneous value or re-raise the last exception. The default `after` clause will simply return the last successful value.

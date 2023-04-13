@@ -121,9 +121,9 @@ defmodule Retry do
     * The atom is returned in the first position of a two-tuple (for example, `{:not_okay, _}`)
     * A struct of that type is returned/raised
   * The special atom `:all`. In this case, all values/exceptions will be retried.
-  * A function (for example: `fn val -> val.starts_with("ok") end`) or partial function (for
-    example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called with
-    the return value and the `do` block will be retried if the function returns a truthy value.
+  * A function (for example: `fn val -> String.starts_with?(val, "ok") end`) or partial function
+    (for example: `fn {:error, %SomeStruct{reason: "busy"}} -> true`). The function will be called
+    with the return value and the `do` block will be retried if the function returns a truthy value.
     If the function returns a falsy value or if no function clause matches, the `do` block
     will not be retried.
   * A list of any of the above. The `do` block will be retried if any of the items in the list
