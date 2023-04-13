@@ -3,10 +3,13 @@ defmodule RetryTest do
   use Retry
 
   import Stream
+  import ExUnit.CaptureLog
+  require Logger
 
   doctest Retry
 
   defmodule(CustomError, do: defexception(message: "custom error!"))
+  defmodule(NotOkay, do: defstruct([]))
 
   describe "retry" do
     test "retries execution for specified attempts when result is error tuple" do
@@ -45,44 +48,59 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
-    test "retries execution for specified attempts when result is a specified atom" do
-      retry_atom = :not_ok
+    test "retries execution for specified attempts when allowed result is returned" do
+      testcases = [
+        {:not_ok, :all},
+        {:not_ok, [:foo, :all]},
+        {:not_ok, :not_ok},
+        {:not_ok, [:foo, :not_ok]},
+        {{:not_ok, :foo}, [:foo, :not_ok]},
+        {%NotOkay{}, NotOkay},
+        {%NotOkay{}, [Foo, NotOkay]},
+        {:not_ok, fn _ -> true end},
+        {:not_ok, [fn _ -> false end, fn _ -> true end]},
+        {:not_ok, [fn _ -> nil end, fn _ -> 1 end]},
+        {:not_ok, [fn :partial -> false end, fn _ -> true end]},
+        {:not_ok,
+         fn
+           :partial -> false
+           :not_ok -> true
+         end}
+      ]
 
-      {elapsed, _} =
-        :timer.tc(fn ->
-          result =
-            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
-              retry_atom
-            after
-              _ -> :ok
-            else
-              error -> error
-            end
+      for {rval, atoms} <- testcases do
+        {elapsed, _} =
+          :timer.tc(fn ->
+            result =
+              retry with: linear_backoff(50, 1) |> take(5), atoms: atoms do
+                rval
+              after
+                _ -> :ok
+              else
+                error -> error
+              end
 
-          assert result == retry_atom
-        end)
+            assert result == rval
+          end)
 
-      assert elapsed / 1_000 >= 250
+        assert elapsed / 1_000 >= 250
+      end
     end
 
-    test "retries execution for specified attempts when result is a tuple with a specified atom" do
-      retry_atom = :not_ok
+    test "does not retry on :error if atoms is specified" do
+      f = fn ->
+        retry with: linear_backoff(50, 1) |> take(5), atoms: :not_ok do
+          Logger.info("running")
+          :error
+        after
+          result -> result
+        else
+          _error -> :not_this
+        end
+      end
 
-      {elapsed, _} =
-        :timer.tc(fn ->
-          result =
-            retry with: linear_backoff(50, 1) |> take(5), atoms: [retry_atom] do
-              {retry_atom, "Some error message"}
-            after
-              _ -> :ok
-            else
-              error -> error
-            end
-
-          assert result == {retry_atom, "Some error message"}
-        end)
-
-      assert elapsed / 1_000 >= 250
+      assert f.() == :error
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
     end
 
     test "retries execution for specified attempts when error is raised" do
@@ -102,23 +120,33 @@ defmodule RetryTest do
       assert elapsed / 1_000 >= 250
     end
 
-    test "retries execution when a whitelisted exception is raised" do
-      custom_error_list = [CustomError]
+    test "retries execution when an allowed exception is raised" do
+      testcases = [
+        CustomError,
+        [OtherThing, CustomError],
+        :all,
+        [:other_thing, :all],
+        fn _ -> true end,
+        [fn _ -> false end, fn _ -> true end],
+        [fn :partial -> false end, fn _ -> true end]
+      ]
 
-      {elapsed, _} =
-        :timer.tc(fn ->
-          assert_raise CustomError, fn ->
-            retry with: linear_backoff(50, 1) |> take(5), rescue_only: custom_error_list do
-              raise CustomError
-            after
-              _ -> :ok
-            else
-              error -> raise error
+      for testcase <- testcases do
+        {elapsed, _} =
+          :timer.tc(fn ->
+            assert_raise CustomError, fn ->
+              retry with: linear_backoff(50, 1) |> take(5), rescue_only: testcase do
+                raise CustomError
+              after
+                _ -> :ok
+              else
+                error -> raise error
+              end
             end
-          end
-        end)
+          end)
 
-      assert elapsed / 1_000 >= 250
+        assert elapsed / 1_000 >= 250
+      end
     end
 
     test "does not retry execution when an unknown exception is raised" do
@@ -138,17 +166,37 @@ defmodule RetryTest do
       assert elapsed / 1_000 < 250
     end
 
+    test "does not retry on RuntimeError if some other rescue_only is specified" do
+      f = fn ->
+        assert_raise RuntimeError, fn ->
+          retry with: linear_backoff(50, 1) |> take(5), rescue_only: CustomError do
+            Logger.info("running")
+            raise RuntimeError
+          after
+            _ -> :ok
+          else
+            error -> raise error
+          end
+        end
+      end
+
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
+    end
+
     test "does not have to retry execution when there is no error" do
-      result =
+      f = fn ->
         retry with: linear_backoff(50, 1) |> take(5) do
+          Logger.info("running")
           {:ok, "Everything's so awesome!"}
         after
           result -> result
         else
           _ -> :error
         end
+      end
 
-      assert result == {:ok, "Everything's so awesome!"}
+      assert f.() == {:ok, "Everything's so awesome!"}
+      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
     end
 
     test "uses the default 'after' action" do
