@@ -167,14 +167,26 @@ defmodule Retry do
             unquote(else_clause)
           end
 
-        e = {atom, _} when atom in unquote(atoms) ->
-          case e do
-            unquote(else_clause)
+        e = {atom, _} ->
+          if atom in unquote(atoms) do
+            case e do
+              unquote(else_clause)
+            end
+          else
+            case e do
+              unquote(after_clause)
+            end
           end
 
-        e when is_atom(e) and e in unquote(atoms) ->
-          case e do
-            unquote(else_clause)
+        e when is_atom(e) ->
+          if e in unquote(atoms) do
+            case e do
+              unquote(else_clause)
+            end
+          else
+            case e do
+              unquote(after_clause)
+            end
           end
 
         result ->
