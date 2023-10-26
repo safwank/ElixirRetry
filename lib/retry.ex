@@ -47,7 +47,7 @@ defmodule Retry do
       default: [
         else:
           quote do
-            e when is_exception(e) -> raise e
+            {e, stacktrace} when is_exception(e) -> reraise e, stacktrace
             e -> e
           end,
         after:
@@ -162,8 +162,8 @@ defmodule Retry do
         fun.()
       end)
       |> case do
-        {:exception, e} ->
-          case e do
+        {:exception, e, stacktrace} ->
+          case {e, stacktrace} do
             unquote(else_clause)
           end
 
@@ -336,7 +336,7 @@ defmodule Retry do
         rescue
           e ->
             if e.__struct__ in unquote(exceptions) do
-              {:cont, {:exception, e}}
+              {:cont, {:exception, e, __STACKTRACE__}}
             else
               reraise e, __STACKTRACE__
             end

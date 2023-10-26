@@ -94,7 +94,7 @@ result = retry with: constant_backoff(100) |> Stream.take(10) do
 after
   result -> result
 else
-  e when is_exception(e) -> raise e
+  {e, stacktrace} when is_exception(e) -> reraise e, stacktrace
   e -> e
 end
 ```

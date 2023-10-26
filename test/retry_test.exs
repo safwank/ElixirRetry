@@ -9,6 +9,23 @@ defmodule RetryTest do
   defmodule(CustomError, do: defexception(message: "custom error!"))
 
   describe "retry" do
+    defp boom, do: raise "boom"
+
+    test "keeps correct stack trace" do
+      e =
+        try do
+          retry with: [1] do
+            boom()
+          end
+        rescue
+          e ->
+            Exception.format(:error, e, __STACKTRACE__)
+        end
+
+      assert e =~ "(RuntimeError) boom"
+      assert e =~ "test/retry_test.exs:12: RetryTest.boom"
+    end
+
     test "retries execution for specified attempts when result is error tuple" do
       {elapsed, _} =
         :timer.tc(fn ->
@@ -94,7 +111,7 @@ defmodule RetryTest do
             after
               _ -> :ok
             else
-              error -> raise error
+              {error, _} -> raise error
             end
           end
         end)
@@ -113,7 +130,7 @@ defmodule RetryTest do
             after
               _ -> :ok
             else
-              error -> raise error
+              {error, _} -> raise error
             end
           end
         end)
