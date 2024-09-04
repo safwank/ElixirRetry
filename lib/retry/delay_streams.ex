@@ -6,6 +6,8 @@ defmodule Retry.DelayStreams do
 
   """
 
+  @type factor() :: pos_integer() | float()
+
   @doc """
 
   Returns a stream of delays that increase exponentially.
@@ -17,7 +19,7 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  @spec exponential_backoff(pos_integer(), pos_integer()) :: Enumerable.t()
+  @spec exponential_backoff(pos_integer(), factor()) :: Enumerable.t()
   def exponential_backoff(initial_delay \\ 10, factor \\ 2) do
     Stream.unfold(initial_delay, fn last_delay ->
       {last_delay, round(last_delay * factor)}
@@ -56,10 +58,10 @@ defmodule Retry.DelayStreams do
       end
 
   """
-  @spec linear_backoff(pos_integer(), pos_integer()) :: Enumerable.t()
+  @spec linear_backoff(pos_integer(), factor()) :: Enumerable.t()
   def linear_backoff(initial_delay, factor) do
     Stream.unfold(0, fn failures ->
-      next_d = initial_delay + failures * factor
+      next_d = initial_delay + round(failures * factor)
       {next_d, failures + 1}
     end)
   end
