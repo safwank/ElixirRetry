@@ -13,12 +13,10 @@ jobs:
 
     strategy:
       matrix:
-        elixir: ['1.15', '1.16', '1.17']
+        elixir: ['1.16', '1.17', '1.18']
         otp: ['25', '26', '27']
         exclude:
           - elixir: 1.16
-            otp: 27
-          - elixir: 1.15
             otp: 27
 
     steps:
