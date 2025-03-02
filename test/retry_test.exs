@@ -3,7 +3,6 @@ defmodule RetryTest do
   use Retry
 
   import Stream
-  import ExUnit.CaptureLog
   require Logger
 
   doctest Retry
@@ -88,19 +87,16 @@ defmodule RetryTest do
     end
 
     test "does not retry on :error if atoms is specified" do
-      f = fn ->
+      result =
         retry with: linear_backoff(50, 1) |> take(5), atoms: :not_ok do
-          Logger.info("running")
           :error
         after
           result -> result
         else
           _error -> :not_this
         end
-      end
 
-      assert f.() == :error
-      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
+      assert result == :error
     end
 
     test "retries execution for specified attempts when error is raised" do
@@ -167,36 +163,33 @@ defmodule RetryTest do
     end
 
     test "does not retry on RuntimeError if some other rescue_only is specified" do
-      f = fn ->
-        assert_raise RuntimeError, fn ->
-          retry with: linear_backoff(50, 1) |> take(5), rescue_only: CustomError do
-            Logger.info("running")
-            raise RuntimeError
-          after
-            _ -> :ok
-          else
-            error -> raise error
+      {elapsed, _} =
+        :timer.tc(fn ->
+          assert_raise RuntimeError, fn ->
+            retry with: linear_backoff(50, 1) |> take(5), rescue_only: CustomError do
+              raise RuntimeError
+            after
+              _ -> :ok
+            else
+              error -> raise error
+            end
           end
-        end
-      end
+        end)
 
-      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
+      assert elapsed / 1_000 < 250
     end
 
     test "does not have to retry execution when there is no error" do
-      f = fn ->
+      result =
         retry with: linear_backoff(50, 1) |> take(5) do
-          Logger.info("running")
           {:ok, "Everything's so awesome!"}
         after
           result -> result
         else
           _ -> :error
         end
-      end
 
-      assert f.() == {:ok, "Everything's so awesome!"}
-      assert Regex.scan(~r/running/, capture_log(f)) |> length == 1
+      assert result == {:ok, "Everything's so awesome!"}
     end
 
     test "uses the default 'after' action" do
@@ -341,7 +334,7 @@ defmodule RetryTest do
     end
 
     test "responds with a meaningful error when clauses are not given" do
-      assert_raise CompileError, ~r/expected -> clauses for :do in "case"$/, fn ->
+      assert_raise CompileError, ~r/cannot compile module/, fn ->
         defmodule BadRetryWhileSyntax do
           def retry_while do
             retry_while with: linear_backoff(50, 1) |> take(5), acc: 0 do

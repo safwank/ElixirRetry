@@ -9,17 +9,15 @@ on:
 jobs:
   build:
     name: Build and test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
-        elixir: ["1.12", "1.13", "1.14"]
-        otp: ["23", "24", "25"]
+        elixir: ['1.16', '1.17', '1.18']
+        otp: ['25', '26', '27']
         exclude:
-          - elixir: 1.12
-            otp: 25
-          - elixir: 1.13
-            otp: 25
+          - elixir: 1.16
+            otp: 27
 
     steps:
       - uses: actions/checkout@v2

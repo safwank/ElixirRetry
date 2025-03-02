@@ -7,17 +7,13 @@ defmodule Retry.Mixfile do
       name: "retry",
       description:
         "Simple Elixir macros for linear retry, exponential backoff and wait with composable delays.",
-      version: "0.18.0",
-      elixir: "~> 1.12",
-      source_url: "https://github.com/safwank/ElixirRetry",
-      docs: [
-        extras: ["README.md"],
-        source_ref: "master"
-      ],
-      build_embedded: Mix.env() == :prod,
+      version: "0.19.0",
+      elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
+      docs: docs(),
+      dialyzer: dialyzer(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         credo: :test,
@@ -31,25 +27,36 @@ defmodule Retry.Mixfile do
     ]
   end
 
-  def application do
-    [applications: [:logger]]
-  end
-
   defp deps do
     [
-      {:credo, "~> 1.7.0", only: :test},
-      {:excoveralls, "~> 0.16.0", only: :test},
-      {:dialyxir, "~> 1.3.0", only: [:dev, :test]},
-      {:ex_doc, "~> 0.29.0", only: :dev},
-      {:earmark, "~> 1.4.0", only: :dev}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.37", only: :dev, runtime: false},
+      {:earmark, "~> 1.4", only: :dev, runtime: false}
     ]
   end
 
   defp package do
     [
       maintainers: ["Safwan Kamarrudin"],
-      licenses: ["Apache 2.0"],
-      links: %{github: "https://github.com/safwank/ElixirRetry"}
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/safwank/ElixirRetry"}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: ["README.md"],
+      source_url: "https://github.com/safwank/ElixirRetry",
+      source_ref: "master"
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:ex_unit, :mix],
     ]
   end
 end
